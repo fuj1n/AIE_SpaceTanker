@@ -1,10 +1,16 @@
 #pragma comment(lib, "winmm") 
 
+#include "bass.h"
+
+//Sprites
 unsigned int splashTexture;
 unsigned int instructionTexture;
 unsigned int menuButtons[4];
-
 unsigned int stars;
+
+//Sounds
+HSTREAM backgroundLoop;
+HSTREAM laserFire;
 
 class IDrawable{
 public: 

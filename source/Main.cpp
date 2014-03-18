@@ -2,6 +2,7 @@
 
 #include "AIE.h"
 #include "Game.h"
+#include "bass.h"
 #include <cctype>
 #include <windows.h>
 #include <vector>
@@ -266,6 +267,7 @@ public:
 			if(projXDir != -1337 && projYDir != -1337){
 				Projectile* projectile = new Projectile("./images/beam.png", projX, projY, projXDir, projYDir, rotation, betterAmmoCooldown > 0 ? 5.5f : 4.5f, betterAmmoCooldown > 0 ? 1.5f : 1, betterAmmoCooldown > 0 ? SColour(0x00FFFFFF) : SColour(0xFFFF00FF), betterAmmoCooldown > 0 ? 30 : 20, betterAmmoCooldown > 0);
 				addDrawable(projectile);
+				BASS_ChannelPlay(laserFire, false);
 				shootCooldown = (int)(0.5 * tickLimit);
 			}
 		}
@@ -311,13 +313,19 @@ public:
 		MoveSprite(menuButtons[1], (float)SCREEN_WIDTH / 2, (float)SCREEN_HEIGHT / 2);
 		MoveSprite(menuButtons[2], (float)SCREEN_WIDTH / 2, (float)SCREEN_HEIGHT / 2 + 65);
 		MoveSprite(menuButtons[3], (float)SCREEN_WIDTH / 2, (float)SCREEN_HEIGHT / 2 - 10);
+
+		//Call all the sound initialisation here
+		laserFire = BASS_StreamCreateFile(false, "./sounds/fire_laser.wav", 0, 0, 0);
+		backgroundLoop = BASS_StreamCreateFile(false, "./sounds/ambience/ambient1.wav", 0, 0, BASS_SAMPLE_LOOP);
 	}
 
 	void initGame(){
 		//Call all the IDrawable initialisation here
-		Player* pl = new Player("./images/tracker.png");
+		Player* pl = new Player("./images/tanker.png");
 		aiTrackTarget = pl;
 		addDrawable(pl);
+		BASS_ChannelSetAttribute(backgroundLoop, BASS_ATTRIB_VOL, 0.15F);
+		BASS_ChannelPlay(backgroundLoop, false);
 	}
 
 	int update(){
@@ -397,7 +405,6 @@ static void removeDrawable(IDrawable* drawable){
 	}
 	delete drawable;
 }
-
 int update(Game g){
 	drawables.shrink_to_fit();
 	return g.update();
@@ -466,6 +473,9 @@ int main( int argc, char* argv[] )
 
     Initialise(SCREEN_WIDTH, SCREEN_HEIGHT, fscreen, "Space Tanker");
 
+	//BASS init stuffs
+	BASS_Init(-1, 44100, 0, 0, 0); 
+
 	SetBackgroundColour(SColour(0x000));
 	
 	Game game;
@@ -517,6 +527,8 @@ int main( int argc, char* argv[] )
 		DestroySprite(d->getTexture());
 		delete d;
 	}
+
+	BASS_Free();
 
     Shutdown();
 
