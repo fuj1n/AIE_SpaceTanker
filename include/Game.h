@@ -10,12 +10,14 @@ unsigned int stars;
 
 //Sounds
 HSTREAM backgroundLoop;
-HSTREAM laserFire;
+HSTREAM laserFireSound;
+HSTREAM speedUpSound;
 
 class IDrawable{
 public: 
 	virtual unsigned int getTexture() = 0;
 	virtual void update() = 0;
+	virtual bool isCollidable() = 0;
 };
 
 class ICollidable{

@@ -45,6 +45,70 @@ enum States{
 
 std::vector<IDrawable*> drawables;
 
+class Powerup : public IDrawable, public ICollidable{
+public:
+	static const int width = 20, height = 20;
+	char* powerupType;
+
+	unsigned int x, y, texture;
+	int timeLeft;
+
+	Powerup(char* type, char* textureName, int x, int y, float stayTime){
+		powerupType = type;
+		texture = CreateSprite(textureName, width, height, false);
+		this->x = x;
+		this->y = y;
+		timeLeft = (int)(timeLeft * 60);
+	}
+
+	unsigned int getTexture(){
+		return texture;
+	}
+	
+	void update(){
+		MoveSprite(texture, (float)x, (float)y);
+
+		timeLeft--;
+		if(timeLeft <= 0){
+			removeDrawable(this);
+		}
+	}
+
+	bool isCollidable(){
+		return true;
+	}
+
+	unsigned int getX(){
+		return x;
+	}
+
+	unsigned int getY(){
+		return y;
+	}
+
+	unsigned int getWidth(){
+		return width;	
+	}
+
+	unsigned int getHeight(){
+		return height;
+	}
+
+	bool isCollideTester(){
+		return false;
+	}
+
+	void onCollide(ICollidable* col){}
+
+	void onTesterMessage(ICollidable* col){
+		timeLeft = 0;
+	}
+
+	char* getColliderName(){
+		return (char*)(std::string(std::string("powerup::") + std::string(powerupType)).c_str());
+	}
+};
+
 class Projectile : public IDrawable, public ICollidable{
 public:
 	static const int width = 10;
@@ -97,6 +161,10 @@ public:
 		}
 	}
 
+	bool isCollidable(){
+		return true;
+	}
+
 	unsigned int getX(){
 		return (int)x;
 	}
@@ -130,11 +198,12 @@ public:
 	}
 };
 
-class Player : public IDrawable, public ITrackable{
+class Player : public IDrawable, public ITrackable, public ICollidable{
 public:
 	static const int width = 28;
 	static const int height = 41;
 	float x, y, rotation, currentRotation, speed, scale;
+	int health;
 
 	int shootCooldown, betterAmmoCooldown;
 
@@ -146,6 +215,7 @@ public:
 		rotation = ROT_EAST;
 		currentRotation = rotation;
 		speed = 1.5F;
+		health = 100;
 		texture = CreateSprite(textureName, (int)(width * scale), (int)(height * scale), true);
 		MoveSprite(texture, x, y);
 	}
@@ -171,7 +241,14 @@ public:
 			betterAmmoCooldown--;
 		}
 
+		static bool lastSpeed;
 		float speed = this->speed * (IsKeyDown(KEY_LSHIFT) || IsKeyDown(KEY_RSHIFT) ? 2 : 1);
+		if(!lastSpeed && (IsKeyDown(KEY_LSHIFT) || IsKeyDown(KEY_RSHIFT))){
+			lastSpeed = true;
+			BASS_ChannelPlay(speedUpSound, false);
+		}else if(lastSpeed && (!IsKeyDown(KEY_LSHIFT) || IsKeyDown(KEY_RSHIFT))){
+			lastSpeed = false;
+		}
 
 		if(IsKeyDown('W') && IsKeyDown('A')){
 			rotation = ROT_NORTHWEST;
@@ -267,7 +344,7 @@ public:
 			if(projXDir != -1337 && projYDir != -1337){
 				Projectile* projectile = new Projectile("./images/beam.png", projX, projY, projXDir, projYDir, rotation, betterAmmoCooldown > 0 ? 5.5f : 4.5f, betterAmmoCooldown > 0 ? 1.5f : 1, betterAmmoCooldown > 0 ? SColour(0x00FFFFFF) : SColour(0xFFFF00FF), betterAmmoCooldown > 0 ? 30 : 20, betterAmmoCooldown > 0);
 				addDrawable(projectile);
-				BASS_ChannelPlay(laserFire, false);
+				BASS_ChannelPlay(laserFireSound, false);
 				shootCooldown = (int)(0.5 * tickLimit);
 			}
 		}
@@ -292,6 +369,48 @@ public:
 		MoveSprite(texture, x, y);
 		MoveCamera(x - SCREEN_WIDTH / 2, y - SCREEN_HEIGHT / 2);
 	}
+
+	bool isCollidable(){
+		return true;
+	}
+
+	unsigned int getWidth(){
+		return width;	
+	}
+
+	unsigned int getHeight(){
+		return height;
+	}
+
+	bool isCollideTester(){
+		return false;
+	}
+
+	void onCollide(ICollidable* col){
+		char* colliderName = col->getColliderName();
+
+		if(colliderName == "bullet"){
+			health -= 5;
+			col->onTesterMessage(this);
+		}else if(colliderName == "enemy"){
+			health -= 15;
+		}else if(colliderName == "powerup::health"){
+			health += 35;
+			col->onTesterMessage(this);
+		}else if(colliderName == "powerup::laser"){
+			betterAmmoCooldown = 900;
+		}
+
+		if(health < 0){
+			health = 0;
+		}
+	}
+
+	void onTesterMessage(ICollidable* col){}
+
+	char* getColliderName(){
+		return "player";
+	}
 };
 
 class Game{
@@ -315,8 +434,10 @@ public:
 		MoveSprite(menuButtons[3], (float)SCREEN_WIDTH / 2, (float)SCREEN_HEIGHT / 2 - 10);
 
 		//Call all the sound initialisation here
-		laserFire = BASS_StreamCreateFile(false, "./sounds/fire_laser.wav", 0, 0, 0);
 		backgroundLoop = BASS_StreamCreateFile(false, "./sounds/ambience/ambient1.wav", 0, 0, BASS_SAMPLE_LOOP);
+		laserFireSound = BASS_StreamCreateFile(false, "./sounds/fire_laser.wav", 0, 0, 0);
+		speedUpSound = BASS_StreamCreateFile(false, "./sounds/speedup.wav", 0, 0, 0);
+		BASS_ChannelSetAttribute(speedUpSound, BASS_ATTRIB_VOL, 0.50F);
 	}
 
 	void initGame(){
@@ -324,6 +445,9 @@ public:
 		Player* pl = new Player("./images/tanker.png");
 		aiTrackTarget = pl;
 		addDrawable(pl);
+
+		addDrawable(new Powerup("laser", "./images/powerkit.png", 50, 50, 3000));
+
 		BASS_ChannelSetAttribute(backgroundLoop, BASS_ATTRIB_VOL, 0.15F);
 		BASS_ChannelPlay(backgroundLoop, false);
 	}
@@ -375,9 +499,25 @@ public:
 				}
 			}
 		case GAME:
+			drawables.shrink_to_fit();
 			if(!drawables.empty()){
 				for(unsigned int i = 0; i < drawables.size(); i++){
 					IDrawable* d = drawables.at(i);
+				//Wat? The second part of the IF statement gets skipped :(
+				if(d->isCollidable() && ((ICollidable*)d)->isCollideTester()){
+					ICollidable* col0 = (ICollidable*)d;
+						std::cout << col0->isCollideTester();
+						for(unsigned int i1 = 0; i1 < drawables.size(); i1++){
+							std::cout << "Phase 1" << std::endl;
+							if(drawables.at(i1)->isCollidable()){
+								ICollidable* col1 = (ICollidable*)drawables.at(i1);
+								std::cout << col1->getY() << std::endl;
+								if(col0 != col1 && ((col1->getX() >= col0->getX() && col1->getX() <= (col0->getX() + col0->getWidth()) && col1->getY() >= col0->getY() && col1->getY() <= (col0->getY() + col0->getHeight())) || ((col1->getX() + col1->getWidth()) >= col0->getX() && (col1->getX() + col1->getWidth()) <= (col0->getX() + col0->getHeight()) && (col1->getY() + col1->getHeight()) >= col0->getY() && (col1->getY() + col1->getHeight()) <= (col0->getY() + col0->getHeight())) || ((col1->getX() + col1->getWidth()) >= col0->getX() && (col1->getX() + col1->getWidth()) <= (col0->getX() + col0->getHeight()) && col1->getY() >= col0->getY() && col1->getY() <= (col0->getY() + col0->getY()) + (col0->getHeight())) || (col1->getX() >= col0->getX() && col1->getX() <= (col0->getX() + col0->getWidth()) && (col1->getY() + col1->getHeight()) >= col0->getY() && (col1->getY() + col1->getHeight()) <= (col0->getY() + col0->getHeight())))){
+									col0->onCollide(col1);
+								}
+							}
+						}
+					}
 
 					d->update();
 				}
@@ -405,6 +545,18 @@ static void removeDrawable(IDrawable* drawable){
 	}
 	delete drawable;
 }
+
+static void clearDrawables(){
+	for(unsigned int i = 0; i < drawables.size(); i++){
+		drawables.shrink_to_fit();
+		DestroySprite(drawables.at(i)->getTexture());
+		delete drawables.at(i);
+		drawables.erase(drawables.begin() + i);
+		i -= 1;
+	}
+	drawables.clear();
+}
+
 int update(Game g){
 	drawables.shrink_to_fit();
 	return g.update();
@@ -443,6 +595,15 @@ void draw(){
 	DrawString(std::string(std::string("FPS: ") + std::to_string(fps) + std::string(" TPS: ") + std::to_string(tps)).c_str(), 10, 10); 
 
 	ClearScreen();
+}
+
+//Cleans the memory at the end of execution
+void cleanup(){
+	clearDrawables();
+	//Triggers a breakpoint in AIE Template_d.exe
+	//delete[] menuButtons;
+	//_CrtIsValidHeapPointer( pUserData ) Debug assertion failed
+	//delete &SCREEN_WIDTH, &SCREEN_HEIGHT, &WORLD_WIDTH, &WORLD_HEIGHT, &fps, &tps, &splashTexture, &instructionTexture, &stars, &backgroundLoop, &laserFireSound, &speedUpSound;
 }
 
 int main( int argc, char* argv[] )
@@ -531,6 +692,8 @@ int main( int argc, char* argv[] )
 	BASS_Free();
 
     Shutdown();
+
+	cleanup();
 
     return quitStatus == -1 ? 0 : quitStatus;
 }
