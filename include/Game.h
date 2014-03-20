@@ -14,13 +14,19 @@ HSTREAM backgroundLoop;
 HSTREAM laserFireSound;
 HSTREAM speedUpSound;
 
-class IDrawable{
+class IParent{
+
+};
+
+class IDrawable : public IParent{
 public: 
+	IParent* parent;
+
 	virtual unsigned int getTexture() = 0;
 	virtual void update() = 0;
 };
 
-class ICollidable{
+class ICollidable : public IDrawable{
 public:
 	virtual unsigned int getX() = 0;
 	virtual unsigned int getY() = 0;

@@ -50,7 +50,7 @@ enum States{
 
 std::vector<IDrawable*> drawables;
 
-class Powerup : public IDrawable, public ICollidable{
+class Powerup : public ICollidable{
 public:
 	static const int width = 64, height = 64;
 	char* powerupType;
@@ -110,7 +110,7 @@ public:
 	}
 };
 
-class Projectile : public IDrawable, public ICollidable{
+class Projectile : public ICollidable{
 public:
 	static const int width = 10;
 	int height;
@@ -119,7 +119,7 @@ public:
 	float x, y, rotation, currentRotation, speed, scale;
 
 	unsigned int texture;
-	Projectile(const char* textureName, int x, int y, int xDir, int yDir, float rotation, float speed, float stayTime, SColour color = SColour(0xFFFFFFFF), int length = 20, bool special = false){
+	Projectile(const char* textureName, int x, int y, int xDir, int yDir, float rotation, float speed, float stayTime, SColour color = SColour(0xFFFFFFFF), int length = 20, bool special = false, IParent* parent = 0){
 		scale = 1;
 		height = length;
 		this->x = (float)x;
@@ -134,6 +134,8 @@ public:
 		texture = CreateSprite(textureName, (int)(width * scale), (int)(height * scale), true);
 		SetSpriteColour(texture, color);
 		MoveSprite(texture, this->x, this->y);
+
+		this->parent = parent;
 	}
 
 	unsigned int getTexture(){
@@ -195,10 +197,10 @@ public:
 	}
 };
 
-class Player : public IDrawable, public ITrackable, public ICollidable{
+class Player : public ITrackable, public ICollidable{
 public:
-	static const int width = 28;
-	static const int height = 41;
+	static const int width = 64;
+	static const int height = 64;
 	float x, y, rotation, currentRotation, speed, scale;
 	int health;
 
@@ -339,7 +341,7 @@ public:
 			}
 
 			if(projXDir != -1337 && projYDir != -1337){
-				Projectile* projectile = new Projectile("./images/beam.png", projX, projY, projXDir, projYDir, rotation, betterAmmoCooldown > 0 ? 5.5f : 4.5f, betterAmmoCooldown > 0 ? 1.5f : 1, betterAmmoCooldown > 0 ? SColour(0x00FFFFFF) : SColour(0xFFFF00FF), betterAmmoCooldown > 0 ? 30 : 20, betterAmmoCooldown > 0);
+				Projectile* projectile = new Projectile("./images/beam.png", projX, projY, projXDir, projYDir, rotation, betterAmmoCooldown > 0 ? 5.5f : 4.5f, betterAmmoCooldown > 0 ? 1.5f : 1, betterAmmoCooldown > 0 ? SColour(0x00FFFFFF) : SColour(0xFFFF00FF), betterAmmoCooldown > 0 ? 30 : 20, betterAmmoCooldown > 0, this);
 				addDrawable(projectile);
 				BASS_ChannelPlay(laserFireSound, false);
 				shootCooldown = (int)(0.5 * tickLimit);
@@ -382,7 +384,7 @@ public:
 	void onCollide(ICollidable* col){
 		std::string colliderName = col->getColliderName();
 
-		if(colliderName == "bullet"){
+		if(colliderName == "bullet" && !(col->parent == this)){
 			health -= 5;
 			col->onTesterMessage(this);
 		}else if(colliderName == "enemy"){
