@@ -1,6 +1,7 @@
 #pragma comment(lib, "winmm") 
 
 #include "bass.h"
+#include <string>
 
 //Sprites
 unsigned int splashTexture;
@@ -17,7 +18,6 @@ class IDrawable{
 public: 
 	virtual unsigned int getTexture() = 0;
 	virtual void update() = 0;
-	virtual bool isCollidable() = 0;
 };
 
 class ICollidable{
@@ -30,7 +30,7 @@ public:
 	virtual void onCollide(ICollidable*) = 0;
 	virtual void onTesterMessage(ICollidable*) = 0;
 
-	virtual char* getColliderName() = 0;
+	virtual std::string getColliderName() = 0;
 };
 
 class ITrackable{

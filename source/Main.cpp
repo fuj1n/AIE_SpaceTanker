@@ -3,6 +3,7 @@
 #include "AIE.h"
 #include "Game.h"
 #include "bass.h"
+#include "CollisionTesting.h"
 #include <cctype>
 #include <windows.h>
 #include <vector>
@@ -12,6 +13,10 @@
 #include <assert.h>
 #include <crtdbg.h>
 #include <iostream>
+#include <cstring>
+
+const char* GAME_NAME = "Space Tanker";
+const char* VERSION = "v0.3";
 
 int SCREEN_WIDTH = 640, SCREEN_HEIGHT = 480;
 const int WORLD_WIDTH = 960, WORLD_HEIGHT = 960;
@@ -47,7 +52,7 @@ std::vector<IDrawable*> drawables;
 
 class Powerup : public IDrawable, public ICollidable{
 public:
-	static const int width = 20, height = 20;
+	static const int width = 64, height = 64;
 	char* powerupType;
 
 	unsigned int x, y, texture;
@@ -100,8 +105,8 @@ public:
 		timeLeft = 0;
 	}
 
-	char* getColliderName(){
-		return (char*)(std::string(std::string("powerup::") + std::string(powerupType)).c_str());
+	std::string getColliderName(){
+		return std::string("powerup::") + std::string(powerupType);
 	}
 };
 
@@ -185,7 +190,7 @@ public:
 		}
 	}
 
-	char* getColliderName(){
+	std::string getColliderName(){
 		return "bullet";
 	}
 };
@@ -371,11 +376,11 @@ public:
 	}
 
 	bool isCollideTester(){
-		return false;
+		return true;
 	}
 
 	void onCollide(ICollidable* col){
-		char* colliderName = col->getColliderName();
+		std::string colliderName = col->getColliderName();
 
 		if(colliderName == "bullet"){
 			health -= 5;
@@ -387,16 +392,19 @@ public:
 			col->onTesterMessage(this);
 		}else if(colliderName == "powerup::laser"){
 			betterAmmoCooldown = 900;
+			col->onTesterMessage(this);
 		}
 
 		if(health < 0){
 			health = 0;
+		}else if(health > 100){
+			health = 100;
 		}
 	}
 
 	void onTesterMessage(ICollidable* col){}
 
-	char* getColliderName(){
+	std::string getColliderName(){
 		return "player";
 	}
 };
@@ -434,7 +442,7 @@ public:
 		aiTrackTarget = pl;
 		addDrawable(pl);
 
-		addDrawable(new Powerup("laser", "./images/powerkit.png", 50, 50, 3000));
+		addDrawable(new Powerup("laser", "./images/powerkit.png", 200, 200, 3000));
 
 		BASS_ChannelSetAttribute(backgroundLoop, BASS_ATTRIB_VOL, 0.15F);
 		BASS_ChannelPlay(backgroundLoop, false);
@@ -491,16 +499,13 @@ public:
 			if(!drawables.empty()){
 				for(unsigned int i = 0; i < drawables.size(); i++){
 					IDrawable* d = drawables.at(i);
-				ICollidable* col0 = dynamic_cast<ICollidable*>(d);
-				//Wat? The second part of the IF statement gets skipped :(
-				if(col0 != 0 && col0->isCollideTester()){
-						std::cout << col0->isCollideTester();
+					ICollidable* col0 = dynamic_cast<ICollidable*>(d);
+
+					if(col0 != 0 && col0->isCollideTester()){
 						for(unsigned int i1 = 0; i1 < drawables.size(); i1++){
-							std::cout << "Phase 1" << std::endl;
 							ICollidable* col1 = dynamic_cast<ICollidable*>(drawables.at(i1));
 							if(col1 != 0){
-								std::cout << col1->getY() << std::endl;
-								if(col0 != col1 && ((col1->getX() >= col0->getX() && col1->getX() <= (col0->getX() + col0->getWidth()) && col1->getY() >= col0->getY() && col1->getY() <= (col0->getY() + col0->getHeight())) || ((col1->getX() + col1->getWidth()) >= col0->getX() && (col1->getX() + col1->getWidth()) <= (col0->getX() + col0->getHeight()) && (col1->getY() + col1->getHeight()) >= col0->getY() && (col1->getY() + col1->getHeight()) <= (col0->getY() + col0->getHeight())) || ((col1->getX() + col1->getWidth()) >= col0->getX() && (col1->getX() + col1->getWidth()) <= (col0->getX() + col0->getHeight()) && col1->getY() >= col0->getY() && col1->getY() <= (col0->getY() + col0->getY()) + (col0->getHeight())) || (col1->getX() >= col0->getX() && col1->getX() <= (col0->getX() + col0->getWidth()) && (col1->getY() + col1->getHeight()) >= col0->getY() && (col1->getY() + col1->getHeight()) <= (col0->getY() + col0->getHeight())))){
+								if(col0 != col1 && (collision::rect_intersects(col0->getX(), col0->getY(), col0->getWidth(), col0->getHeight(), col1->getX(), col1->getY(), col1->getWidth(), col1->getHeight()))){
 									col0->onCollide(col1);
 								}
 							}
@@ -619,8 +624,8 @@ int main( int argc, char* argv[] )
 		}
 
 	}
-
-    Initialise(SCREEN_WIDTH, SCREEN_HEIGHT, fscreen, "Space Tanker");
+	
+    Initialise(SCREEN_WIDTH, SCREEN_HEIGHT, fscreen, (std::string("Space Tanker ") + std::string(VERSION)).c_str());
 
 	//BASS init stuffs
 	BASS_Init(-1, 44100, 0, 0, 0); 
