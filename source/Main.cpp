@@ -74,10 +74,6 @@ public:
 		}
 	}
 
-	bool isCollidable(){
-		return true;
-	}
-
 	unsigned int getX(){
 		return x;
 	}
@@ -159,10 +155,6 @@ public:
 		if(timeUntilDeath <= 0){
 			removeDrawable(this);
 		}
-	}
-
-	bool isCollidable(){
-		return true;
 	}
 
 	unsigned int getX(){
@@ -370,10 +362,6 @@ public:
 		MoveCamera(x - SCREEN_WIDTH / 2, y - SCREEN_HEIGHT / 2);
 	}
 
-	bool isCollidable(){
-		return true;
-	}
-
 	unsigned int getWidth(){
 		return width;	
 	}
@@ -503,14 +491,14 @@ public:
 			if(!drawables.empty()){
 				for(unsigned int i = 0; i < drawables.size(); i++){
 					IDrawable* d = drawables.at(i);
+				ICollidable* col0 = dynamic_cast<ICollidable*>(d);
 				//Wat? The second part of the IF statement gets skipped :(
-				if(d->isCollidable() && ((ICollidable*)d)->isCollideTester()){
-					ICollidable* col0 = (ICollidable*)d;
+				if(col0 != 0 && col0->isCollideTester()){
 						std::cout << col0->isCollideTester();
 						for(unsigned int i1 = 0; i1 < drawables.size(); i1++){
 							std::cout << "Phase 1" << std::endl;
-							if(drawables.at(i1)->isCollidable()){
-								ICollidable* col1 = (ICollidable*)drawables.at(i1);
+							ICollidable* col1 = dynamic_cast<ICollidable*>(drawables.at(i1));
+							if(col1 != 0){
 								std::cout << col1->getY() << std::endl;
 								if(col0 != col1 && ((col1->getX() >= col0->getX() && col1->getX() <= (col0->getX() + col0->getWidth()) && col1->getY() >= col0->getY() && col1->getY() <= (col0->getY() + col0->getHeight())) || ((col1->getX() + col1->getWidth()) >= col0->getX() && (col1->getX() + col1->getWidth()) <= (col0->getX() + col0->getHeight()) && (col1->getY() + col1->getHeight()) >= col0->getY() && (col1->getY() + col1->getHeight()) <= (col0->getY() + col0->getHeight())) || ((col1->getX() + col1->getWidth()) >= col0->getX() && (col1->getX() + col1->getWidth()) <= (col0->getX() + col0->getHeight()) && col1->getY() >= col0->getY() && col1->getY() <= (col0->getY() + col0->getY()) + (col0->getHeight())) || (col1->getX() >= col0->getX() && col1->getX() <= (col0->getX() + col0->getWidth()) && (col1->getY() + col1->getHeight()) >= col0->getY() && (col1->getY() + col1->getHeight()) <= (col0->getY() + col0->getHeight())))){
 									col0->onCollide(col1);
