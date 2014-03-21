@@ -3,7 +3,7 @@
 #include "AIE.h"
 #include "Game.h"
 #include "bass.h"
-#include "CollisionTesting.h"
+#include "Utils.cpp"
 #include <cctype>
 #include <windows.h>
 #include <vector>
@@ -14,6 +14,7 @@
 #include <crtdbg.h>
 #include <iostream>
 #include <cstring>
+#include <sstream>
 
 const char* GAME_NAME = "Space Tanker";
 const char* VERSION = "v0.3";
@@ -39,6 +40,10 @@ typedef enum RotationDirections{
 
 void addDrawable(IDrawable*);
 void removeDrawable(IDrawable*);
+void clearDrawables();
+void addPlanet(IDrawable*);
+void removePlanet(IDrawable*);
+void clearPlanets();
 
 enum States{
 	SPLASH,
@@ -48,7 +53,25 @@ enum States{
 	HSCORES
 }; States currentState = SPLASH;
 
+std::vector<IDrawable*> planets;
 std::vector<IDrawable*> drawables;
+
+class Planet : public IDrawable{
+public:
+	unsigned int texture;
+
+	Planet(const char* textureName, int x, int y, int bounds){
+		texture = CreateSprite(textureName, bounds, bounds, false);
+
+		MoveSprite(texture, (float)x, (float)y);
+	}
+
+	unsigned int getTexture(){
+		return texture;
+	}
+	
+	void update(){}
+};
 
 class Powerup : public ICollidable{
 public:
@@ -63,7 +86,7 @@ public:
 		texture = CreateSprite(textureName, width, height, false);
 		this->x = x;
 		this->y = y;
-		timeLeft = (int)(timeLeft * 60);
+		timeLeft = (int)(timeLeft * tickLimit);
 	}
 
 	unsigned int getTexture(){
@@ -79,11 +102,11 @@ public:
 		}
 	}
 
-	unsigned int getX(){
+	unsigned int getCX(){
 		return x;
 	}
 
-	unsigned int getY(){
+	unsigned int getCY(){
 		return y;
 	}
 
@@ -164,11 +187,11 @@ public:
 		}
 	}
 
-	unsigned int getX(){
+	unsigned int getCX(){
 		return (int)x;
 	}
 
-	unsigned int getY(){
+	unsigned int getCY(){
 		return (int)y;
 	}
 
@@ -223,12 +246,20 @@ public:
 		return texture;
 	}
 
-	unsigned int getX(){
+	unsigned int getCX(){
 		return (unsigned int)x;
 	}
 
-	unsigned int getY(){
+	unsigned int getCY(){
 		return (unsigned int)y;
+	}
+
+	unsigned int getTX(){
+		return (unsigned int)x + width / 2;
+	}
+
+	unsigned int getTY(){
+		return (unsigned int)y + height / 2;
 	}
 
 	void update(){
@@ -438,6 +469,36 @@ public:
 		BASS_ChannelSetAttribute(speedUpSound, BASS_ATTRIB_VOL, 0.50F);
 	}
 
+	void generatePlanets(){
+		const int planetsToGenerate = 13;
+		bool usedPlanets[13];
+		for(int i = 0; i < 13; i++){
+			usedPlanets[i] = false;
+		}
+
+		for(int i = 0; i < planetsToGenerate; i++){
+			while(true){
+				int texture = Random::random(0, 12);
+
+				if(!usedPlanets[texture]){
+					usedPlanets[texture] = true;
+
+					int planetX = Random::random(64, WORLD_WIDTH - 64);
+					int planetY = Random::random(64, WORLD_HEIGHT - 64);
+					int planetBounds = Random::random(16, 64);
+
+					std::cout << planetX << " " << planetY << " " << planetBounds << std::endl;
+
+					std::string textureStr = static_cast<std::ostringstream*>( &(std::ostringstream() << texture) )->str();
+
+					addPlanet(new Planet((std::string("./images/planets/") + textureStr + std::string(".png")).c_str(), planetX, planetY, planetBounds));
+
+					break;
+				}
+			}
+		}
+	}
+
 	void initGame(){
 		//Call all the IDrawable initialisation here
 		Player* pl = new Player("./images/tanker.png");
@@ -445,6 +506,8 @@ public:
 		addDrawable(pl);
 
 		addDrawable(new Powerup("laser", "./images/powerkit.png", 200, 200, 3000));
+
+		generatePlanets();
 
 		BASS_ChannelSetAttribute(backgroundLoop, BASS_ATTRIB_VOL, 0.15F);
 		BASS_ChannelPlay(backgroundLoop, false);
@@ -507,7 +570,7 @@ public:
 						for(unsigned int i1 = 0; i1 < drawables.size(); i1++){
 							ICollidable* col1 = dynamic_cast<ICollidable*>(drawables.at(i1));
 							if(col1 != 0){
-								if(col0 != col1 && (collision::rect_intersects(col0->getX(), col0->getY(), col0->getWidth(), col0->getHeight(), col1->getX(), col1->getY(), col1->getWidth(), col1->getHeight()))){
+								if(col0 != col1 && (Collision::rect_intersects(col0->getCX(), col0->getCY(), col0->getWidth(), col0->getHeight(), col1->getCX(), col1->getCY(), col1->getWidth(), col1->getHeight()))){
 									col0->onCollide(col1);
 								}
 							}
@@ -545,15 +608,41 @@ static void clearDrawables(){
 	for(unsigned int i = 0; i < drawables.size(); i++){
 		drawables.shrink_to_fit();
 		DestroySprite(drawables.at(i)->getTexture());
-		delete drawables.at(i);
 		drawables.erase(drawables.begin() + i);
 		i -= 1;
 	}
 	drawables.clear();
 }
 
+static void addPlanet(IDrawable* drawable){
+	planets.push_back(drawable);
+}
+
+static void removePlanet(IDrawable* drawable){
+	DestroySprite(drawable->getTexture());
+	for(unsigned int i = 0; i < planets.size(); i++){
+		if(planets.at(i) == drawable){
+			planets.erase(planets.begin() + i);
+			planets.shrink_to_fit();
+			i -= 1;
+		}
+	}
+	delete drawable;
+}
+
+static void clearPlanets(){
+	for(unsigned int i = 0; i < planets.size(); i++){
+		planets.shrink_to_fit();
+		DestroySprite(planets.at(i)->getTexture());
+		planets.erase(planets.begin() + i);
+		i -= 1;
+	}
+	planets.clear();
+}
+
 int update(Game g){
 	drawables.shrink_to_fit();
+	planets.shrink_to_fit();
 	return g.update();
 }
 
@@ -575,8 +664,16 @@ void draw(){
 		DrawSprite(menuButtons[3]);
 		break;
 	case GAME:
+		if(!planets.empty()){
+			for(unsigned int i = 0; i < planets.size(); i++){
+				IDrawable* d = planets.at(i);
+
+				DrawSprite(d->getTexture());
+			}
+		}
+
 		DrawSprite(stars);
-		DrawLine(0, 0, 1, WORLD_HEIGHT);
+
 		if(!drawables.empty()){
 			for(unsigned int i = 0; i < drawables.size(); i++){
 				IDrawable* d = drawables.at(i);
@@ -595,6 +692,7 @@ void draw(){
 //Cleans the memory at the end of execution
 void cleanup(){
 	clearDrawables();
+	clearPlanets();
 	//Triggers a breakpoint in AIE Template_d.exe
 	//delete[] menuButtons;
 	//_CrtIsValidHeapPointer( pUserData ) Debug assertion failed
@@ -677,18 +775,11 @@ int main( int argc, char* argv[] )
 		}
     } while ( quitStatus == -1 && FrameworkUpdate() == false );
 
-	for(unsigned int i = 0; i < drawables.size(); i++){
-		IDrawable* d = drawables.at(i);
-
-		DestroySprite(d->getTexture());
-		delete d;
-	}
-
 	BASS_Free();
 
-    Shutdown();
-
 	cleanup();
+
+	Shutdown();
 
     return quitStatus == -1 ? 0 : quitStatus;
 }

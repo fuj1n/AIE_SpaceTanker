@@ -28,8 +28,8 @@ public:
 
 class ICollidable : public IDrawable{
 public:
-	virtual unsigned int getX() = 0;
-	virtual unsigned int getY() = 0;
+	virtual unsigned int getCX() = 0;
+	virtual unsigned int getCY() = 0;
 	virtual unsigned int getWidth() = 0;
 	virtual unsigned int getHeight() = 0;
 	virtual bool isCollideTester() = 0;
@@ -40,6 +40,6 @@ public:
 };
 
 class ITrackable{
-	virtual unsigned int getX() = 0;
-	virtual unsigned int getY() = 0;
+	virtual unsigned int getTX() = 0;
+	virtual unsigned int getTY() = 0;
 };
