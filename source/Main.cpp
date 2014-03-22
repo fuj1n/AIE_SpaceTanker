@@ -61,7 +61,9 @@ public:
 	unsigned int texture;
 
 	Planet(const char* textureName, int x, int y, int bounds){
-		texture = CreateSprite(textureName, bounds, bounds, false);
+		texture = CreateSprite(textureName, bounds, bounds, false, SColour(0xFFFFFF77));
+
+		SetSpriteBlendMode(texture, _SRC_COLOR, _DST_COLOR);
 
 		MoveSprite(texture, (float)x, (float)y);
 	}
@@ -81,12 +83,12 @@ public:
 	unsigned int x, y, texture;
 	int timeLeft;
 
-	Powerup(char* type, char* textureName, int x, int y, float stayTime){
+	Powerup(char* type, char* textureName, int x, int y, int stayTime){
 		powerupType = type;
 		texture = CreateSprite(textureName, width, height, false);
 		this->x = x;
 		this->y = y;
-		timeLeft = (int)(timeLeft * tickLimit);
+		timeLeft = stayTime;
 	}
 
 	unsigned int getTexture(){
@@ -247,19 +249,19 @@ public:
 	}
 
 	unsigned int getCX(){
-		return (unsigned int)x;
+		return (unsigned int)x - width / 2;
 	}
 
 	unsigned int getCY(){
-		return (unsigned int)y;
+		return (unsigned int)y - width / 2;
 	}
 
 	unsigned int getTX(){
-		return (unsigned int)x + width / 2;
+		return (unsigned int)x;
 	}
 
 	unsigned int getTY(){
-		return (unsigned int)y + height / 2;
+		return (unsigned int)y;
 	}
 
 	void update(){
@@ -268,6 +270,9 @@ public:
 			shootCooldown--;
 		}
 		if(betterAmmoCooldown > 0){
+			if(betterAmmoCooldown == 1){
+				BASS_ChannelPlay(powerDownSound, false);
+			}
 			betterAmmoCooldown--;
 		}
 
@@ -423,9 +428,11 @@ public:
 		}else if(colliderName == "powerup::health"){
 			health += 35;
 			col->onTesterMessage(this);
+			BASS_ChannelPlay(healthUpSound, false);
 		}else if(colliderName == "powerup::laser"){
 			betterAmmoCooldown = 900;
 			col->onTesterMessage(this);
+			BASS_ChannelPlay(powerUpSound, false);
 		}
 
 		if(health < 0){
@@ -444,6 +451,8 @@ public:
 
 class Game{
 public:
+	int powerUpSpawn, healthUpSpawn, powerUpFrequency, healthUpFrequency;
+
 	Game(){
 		init();
 	}
@@ -467,6 +476,9 @@ public:
 		laserFireSound = BASS_StreamCreateFile(false, "./sounds/fire_laser.wav", 0, 0, 0);
 		speedUpSound = BASS_StreamCreateFile(false, "./sounds/speedup.wav", 0, 0, 0);
 		BASS_ChannelSetAttribute(speedUpSound, BASS_ATTRIB_VOL, 0.50F);
+		powerUpSound = BASS_StreamCreateFile(false, "./sounds/powerup.wav", 0, 0, 0);
+		powerDownSound = BASS_StreamCreateFile(false, "./sounds/powerdown.wav", 0, 0, 0);
+		healthUpSound = BASS_StreamCreateFile(false, "./sounds/pickup.wav", 0, 0, 0);
 	}
 
 	void generatePlanets(){
@@ -487,9 +499,7 @@ public:
 					int planetY = Random::random(64, WORLD_HEIGHT - 64);
 					int planetBounds = Random::random(16, 64);
 
-					std::cout << planetX << " " << planetY << " " << planetBounds << std::endl;
-
-					std::string textureStr = static_cast<std::ostringstream*>( &(std::ostringstream() << texture) )->str();
+					std::string textureStr = std::to_string(texture);
 
 					addPlanet(new Planet((std::string("./images/planets/") + textureStr + std::string(".png")).c_str(), planetX, planetY, planetBounds));
 
@@ -500,12 +510,15 @@ public:
 	}
 
 	void initGame(){
+		powerUpFrequency = (int)(30 * tickLimit);
+		healthUpFrequency = (int)(20 * tickLimit);
+		powerUpSpawn = 0;
+		healthUpSpawn = healthUpFrequency / 4;
+
 		//Call all the IDrawable initialisation here
 		Player* pl = new Player("./images/tanker.png");
 		aiTrackTarget = pl;
 		addDrawable(pl);
-
-		addDrawable(new Powerup("laser", "./images/powerkit.png", 200, 200, 3000));
 
 		generatePlanets();
 
@@ -559,7 +572,33 @@ public:
 					currentState = GAME;
 				}
 			}
+
+			break;
 		case GAME:
+			if(powerUpSpawn <= 0){
+
+				int powerUpX = Random::random(64, WORLD_WIDTH - 64);
+				int powerUpY = Random::random(64, WORLD_HEIGHT - 64);
+				int powerUpDespawn = (int)(Random::random(50, 300) * tickLimit);
+
+				addDrawable(new Powerup("laser", "./images/powerkit.png", powerUpX, powerUpY, powerUpDespawn));
+				powerUpSpawn = powerUpFrequency;
+			}else{
+				powerUpSpawn--;
+			}
+
+			if(healthUpSpawn <= 0){
+				healthUpSpawn = healthUpFrequency;
+
+				int healthUpX = Random::random(64, WORLD_WIDTH - 64);
+				int healthUpY = Random::random(64, WORLD_HEIGHT - 64);
+				int healthUpDespawn = (int)(Random::random(100, 450) * tickLimit);
+
+				addDrawable(new Powerup("health", "./images/healthkit.png", healthUpX, healthUpY, healthUpDespawn));
+			}else{
+				healthUpSpawn--;
+			}
+
 			drawables.shrink_to_fit();
 			if(!drawables.empty()){
 				for(unsigned int i = 0; i < drawables.size(); i++){
@@ -640,10 +679,10 @@ static void clearPlanets(){
 	planets.clear();
 }
 
-int update(Game g){
+int update(Game* g){
 	drawables.shrink_to_fit();
 	planets.shrink_to_fit();
-	return g.update();
+	return g->update();
 }
 
 void draw(){
@@ -701,6 +740,7 @@ void cleanup(){
 
 int main( int argc, char* argv[] )
 {	
+	srand(timeGetTime());
 	int scale = 1;
 	bool fscreen = false;
 	if(argc >= 2){
@@ -732,7 +772,7 @@ int main( int argc, char* argv[] )
 
 	SetBackgroundColour(SColour(0x000));
 	
-	Game game;
+	Game* game = new Game();
 
 	int quitStatus = -1;
 

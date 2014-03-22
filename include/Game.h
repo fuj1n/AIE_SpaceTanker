@@ -13,6 +13,9 @@ unsigned int stars;
 HSTREAM backgroundLoop;
 HSTREAM laserFireSound;
 HSTREAM speedUpSound;
+HSTREAM powerUpSound;
+HSTREAM powerDownSound;
+HSTREAM healthUpSound;
 
 class IParent{
 
