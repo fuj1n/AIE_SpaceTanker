@@ -3,11 +3,18 @@
 #include "bass.h"
 #include <string>
 
+typedef unsigned int SPRITE;
+
 //Sprites
-unsigned int splashTexture;
-unsigned int instructionTexture;
-unsigned int menuButtons[4];
-unsigned int stars;
+SPRITE splashTexture;
+SPRITE instructionTexture;
+SPRITE menuButtons[4];
+SPRITE stars;
+
+SPRITE laserBeamSprite;
+SPRITE laserPowerUpSprite;
+SPRITE healthPowerUpSprite;
+SPRITE playerSprite;
 
 //Sounds
 HSTREAM backgroundLoop;
@@ -25,7 +32,7 @@ class IDrawable : public IParent{
 public: 
 	IParent* parent;
 
-	virtual unsigned int getTexture() = 0;
+	virtual SPRITE getTexture() = 0;
 	virtual void update() = 0;
 };
 

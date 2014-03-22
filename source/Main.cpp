@@ -49,7 +49,9 @@ enum States{
 	SPLASH,
 	MAIN_MENU,
 	TUTORIAL,
+	LOADING,
 	GAME,
+	PAUSE,
 	HSCORES
 }; States currentState = SPLASH;
 
@@ -58,7 +60,7 @@ std::vector<IDrawable*> drawables;
 
 class Planet : public IDrawable{
 public:
-	unsigned int texture;
+	SPRITE texture;
 
 	Planet(const char* textureName, int x, int y, int bounds){
 		texture = CreateSprite(textureName, bounds, bounds, false, SColour(0xFFFFFF77));
@@ -68,7 +70,7 @@ public:
 		MoveSprite(texture, (float)x, (float)y);
 	}
 
-	unsigned int getTexture(){
+	SPRITE getTexture(){
 		return texture;
 	}
 	
@@ -77,21 +79,23 @@ public:
 
 class Powerup : public ICollidable{
 public:
-	static const int width = 64, height = 64;
+	float width, height;
 	char* powerupType;
 
 	unsigned int x, y, texture;
 	int timeLeft;
 
-	Powerup(char* type, char* textureName, int x, int y, int stayTime){
+	Powerup(char* type, SPRITE sprite, int x, int y, int stayTime){
+		width = height = 64;
 		powerupType = type;
-		texture = CreateSprite(textureName, width, height, false);
+		texture = DuplicateSprite(sprite);
+		SetSpriteScale(texture, width, height);
 		this->x = x;
 		this->y = y;
 		timeLeft = stayTime;
 	}
 
-	unsigned int getTexture(){
+	SPRITE getTexture(){
 		return texture;
 	}
 	
@@ -113,11 +117,11 @@ public:
 	}
 
 	unsigned int getWidth(){
-		return width;	
+		return (unsigned int)width;	
 	}
 
 	unsigned int getHeight(){
-		return height;
+		return (unsigned int)height;
 	}
 
 	bool isCollideTester(){
@@ -137,16 +141,16 @@ public:
 
 class Projectile : public ICollidable{
 public:
-	static const int width = 10;
-	int height;
+	float width, height;
 	int xDir, yDir, timeUntilDeath;
 	boolean isSpecial;
 	float x, y, rotation, currentRotation, speed, scale;
 
-	unsigned int texture;
-	Projectile(const char* textureName, int x, int y, int xDir, int yDir, float rotation, float speed, float stayTime, SColour color = SColour(0xFFFFFFFF), int length = 20, bool special = false, IParent* parent = 0){
+	SPRITE texture;
+	Projectile(SPRITE sprite, int x, int y, int xDir, int yDir, float rotation, float speed, float stayTime, SColour color = SColour(0xFFFFFFFF), int length = 20, bool special = false, IParent* parent = 0){
 		scale = 1;
-		height = length;
+		width = 10 * scale;
+		height = length * scale;
 		this->x = (float)x;
 		this->y = (float)y;
 		this->xDir = xDir;
@@ -156,14 +160,15 @@ public:
 		this->speed = speed;
 		isSpecial = special;
 		timeUntilDeath = (int)(stayTime * tickLimit);
-		texture = CreateSprite(textureName, (int)(width * scale), (int)(height * scale), true);
+		texture = DuplicateSprite(sprite);
+		SetSpriteScale(texture, width, height);
 		SetSpriteColour(texture, color);
 		MoveSprite(texture, this->x, this->y);
 
 		this->parent = parent;
 	}
 
-	unsigned int getTexture(){
+	SPRITE getTexture(){
 		return texture;
 	}
 
@@ -198,11 +203,11 @@ public:
 	}
 
 	unsigned int getWidth(){
-		return width;	
+		return (unsigned int)width;	
 	}
 
 	unsigned int getHeight(){
-		return height;
+		return (unsigned int)height;
 	}
 
 	bool isCollideTester(){
@@ -224,27 +229,29 @@ public:
 
 class Player : public ITrackable, public ICollidable{
 public:
-	static const int width = 64;
-	static const int height = 64;
+	int width, height;
 	float x, y, rotation, currentRotation, speed, scale;
 	int health;
 
 	int shootCooldown, betterAmmoCooldown;
 
-	unsigned int texture;
-	Player(const char* textureName){
+	SPRITE texture;
+	Player(SPRITE sprite){
 		scale = 2;
+		width = height = 64;
+		float w = 64 * scale, h = 64 * scale;
 		x = WORLD_WIDTH / 2;
 		y = WORLD_HEIGHT / 2;
 		rotation = ROT_EAST;
 		currentRotation = rotation;
 		speed = 1.5F;
 		health = 100;
-		texture = CreateSprite(textureName, (int)(width * scale), (int)(height * scale), true);
+		texture = DuplicateSprite(sprite);
+		SetSpriteScale(texture, w, h);
 		MoveSprite(texture, x, y);
 	}
 
-	unsigned int getTexture(){
+	SPRITE getTexture(){
 		return texture;
 	}
 
@@ -316,15 +323,15 @@ public:
 		}
 
 		if(x < width){
-			x = width;
+			x = (float)width;
 		}else if(x > WORLD_WIDTH - width / 2){
-			x = WORLD_WIDTH - width / 2;
+			x = (float)(WORLD_WIDTH - width / 2);
 		}
 
 		if(y < height / 2){
-			y = height / 2;
+			y = (float)(height / 2);
 		}else if(y > WORLD_HEIGHT - height / 2){
-			y = WORLD_HEIGHT - height / 2;
+			y = (float)(WORLD_HEIGHT - height / 2);
 		}
 
 		if(IsKeyDown(VK_SPACE) && shootCooldown <= 0){
@@ -377,7 +384,7 @@ public:
 			}
 
 			if(projXDir != -1337 && projYDir != -1337){
-				Projectile* projectile = new Projectile("./images/beam.png", projX, projY, projXDir, projYDir, rotation, betterAmmoCooldown > 0 ? 5.5f : 4.5f, betterAmmoCooldown > 0 ? 1.5f : 1, betterAmmoCooldown > 0 ? SColour(0x00FFFFFF) : SColour(0xFFFF00FF), betterAmmoCooldown > 0 ? 30 : 20, betterAmmoCooldown > 0, this);
+				Projectile* projectile = new Projectile(laserBeamSprite, projX, projY, projXDir, projYDir, rotation, betterAmmoCooldown > 0 ? 5.5f : 4.5f, betterAmmoCooldown > 0 ? 1.5f : 1, betterAmmoCooldown > 0 ? SColour(0x00FFFFFF) : SColour(0xFFFF00FF), betterAmmoCooldown > 0 ? 30 : 20, betterAmmoCooldown > 0, this);
 				addDrawable(projectile);
 				BASS_ChannelPlay(laserFireSound, false);
 				shootCooldown = (int)(0.5 * tickLimit);
@@ -509,6 +516,17 @@ public:
 		}
 	}
 
+	void preloadGame(){
+		//Create all the desired game sprites here
+		laserBeamSprite = CreateSprite("./images/beam.png", 10, 4, true);
+		laserPowerUpSprite = CreateSprite("./images/powerkit.png", 128, 128, false);
+		healthPowerUpSprite = CreateSprite("./images/healthkit.png", 128, 128, false);
+		playerSprite = CreateSprite("./images/tanker.png", 64, 64, true);
+
+		initGame();
+		currentState = GAME;
+	}
+
 	void initGame(){
 		powerUpFrequency = (int)(30 * tickLimit);
 		healthUpFrequency = (int)(20 * tickLimit);
@@ -516,7 +534,7 @@ public:
 		healthUpSpawn = healthUpFrequency / 4;
 
 		//Call all the IDrawable initialisation here
-		Player* pl = new Player("./images/tanker.png");
+		Player* pl = new Player(playerSprite);
 		aiTrackTarget = pl;
 		addDrawable(pl);
 
@@ -527,6 +545,7 @@ public:
 	}
 
 	int update(){
+		std::cout << currentState << std::endl;
 		static int quitTickDown;
 		if(IsKeyDown(KEY_ESC)){
 			if(quitTickDown >= (2 * 60)){
@@ -568,12 +587,12 @@ public:
 		case TUTORIAL:
 			if(GetMouseButtonDown(0)){
 				if(mouseX > SCREEN_WIDTH / 2 - 100 && mouseX < SCREEN_WIDTH / 2 + 100 && mouseY > SCREEN_HEIGHT / 2 - 30 - 10 && mouseY < SCREEN_HEIGHT / 2 + 30 - 10){
-					initGame();
-					currentState = GAME;
+					currentState = LOADING;
 				}
 			}
-
 			break;
+		case LOADING:
+			preloadGame();
 		case GAME:
 			if(powerUpSpawn <= 0){
 
@@ -581,7 +600,7 @@ public:
 				int powerUpY = Random::random(64, WORLD_HEIGHT - 64);
 				int powerUpDespawn = (int)(Random::random(50, 300) * tickLimit);
 
-				addDrawable(new Powerup("laser", "./images/powerkit.png", powerUpX, powerUpY, powerUpDespawn));
+				addDrawable(new Powerup("laser", laserPowerUpSprite, powerUpX, powerUpY, powerUpDespawn));
 				powerUpSpawn = powerUpFrequency;
 			}else{
 				powerUpSpawn--;
@@ -594,7 +613,7 @@ public:
 				int healthUpY = Random::random(64, WORLD_HEIGHT - 64);
 				int healthUpDespawn = (int)(Random::random(100, 450) * tickLimit);
 
-				addDrawable(new Powerup("health", "./images/healthkit.png", healthUpX, healthUpY, healthUpDespawn));
+				addDrawable(new Powerup("health", healthPowerUpSprite, healthUpX, healthUpY, healthUpDespawn));
 			}else{
 				healthUpSpawn--;
 			}
@@ -619,7 +638,18 @@ public:
 					d->update();
 				}
 			}
+
+			if(quitTickDown == 1){
+				currentState = PAUSE;
+				BASS_Pause();
+			}
+
 			break;
+		case PAUSE:
+			if(quitTickDown == 1){
+				currentState = GAME;
+				BASS_Start();
+			}
 		}
 		
 		return -1;
@@ -702,6 +732,10 @@ void draw(){
 		DrawSprite(instructionTexture);
 		DrawSprite(menuButtons[3]);
 		break;
+	case LOADING:
+		MoveCamera(0, 0);
+		DrawString("Loading...", SCREEN_WIDTH / 2 - 30, SCREEN_HEIGHT / 2 - 10);
+		break;
 	case GAME:
 		if(!planets.empty()){
 			for(unsigned int i = 0; i < planets.size(); i++){
@@ -721,6 +755,9 @@ void draw(){
 			}
 		}
 		break;
+	case PAUSE:
+		MoveCamera(0, 0);
+		DrawString("Paused", SCREEN_WIDTH / 2 - 30, SCREEN_HEIGHT / 2 - 10);
 	}
 
 	DrawString(std::string(std::string("FPS: ") + std::to_string(fps) + std::string(" TPS: ") + std::to_string(tps)).c_str(), 10, 10); 
