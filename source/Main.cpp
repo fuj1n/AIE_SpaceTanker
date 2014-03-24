@@ -23,7 +23,11 @@ int SCREEN_WIDTH = 640, SCREEN_HEIGHT = 480;
 const int WORLD_WIDTH = 960, WORLD_HEIGHT = 960;
 int fps, tps;
 
+int cameraX = 0, cameraY = 0;
+
 double tickLimit = 60.0;
+
+bool gameRendersThroughPause = true;
 
 ITrackable* aiTrackTarget;
 
@@ -44,6 +48,7 @@ void clearDrawables();
 void addPlanet(IDrawable*);
 void removePlanet(IDrawable*);
 void clearPlanets();
+void positionCamera(int, int);
 
 enum States{
 	SPLASH,
@@ -409,7 +414,7 @@ public:
 
 		RotateSprite(texture, currentRotation);
 		MoveSprite(texture, x, y);
-		MoveCamera(x - SCREEN_WIDTH / 2, y - SCREEN_HEIGHT / 2);
+		positionCamera(x - SCREEN_WIDTH / 2, y - SCREEN_HEIGHT / 2);
 	}
 
 	unsigned int getWidth(){
@@ -545,7 +550,6 @@ public:
 	}
 
 	int update(){
-		std::cout << currentState << std::endl;
 		static int quitTickDown;
 		if(IsKeyDown(KEY_ESC)){
 			if(quitTickDown >= (2 * 60)){
@@ -718,24 +722,30 @@ int update(Game* g){
 void draw(){
 	switch(currentState){
 	case SPLASH:
-		MoveCamera(0, 0);
+		positionCamera(0, 0);
 		DrawSprite(splashTexture);
 		break;
 	case MAIN_MENU:
-		MoveCamera(0, 0);
+		positionCamera(0, 0);
 		DrawSprite(menuButtons[0]);
 		DrawSprite(menuButtons[1]);
 		DrawSprite(menuButtons[2]);
 		break;
 	case TUTORIAL:
-		MoveCamera(0, 0);
+		positionCamera(0, 0);
 		DrawSprite(instructionTexture);
 		DrawSprite(menuButtons[3]);
 		break;
 	case LOADING:
-		MoveCamera(0, 0);
+		positionCamera(0, 0);
 		DrawString("Loading...", SCREEN_WIDTH / 2 - 30, SCREEN_HEIGHT / 2 - 10);
 		break;
+	case PAUSE:
+		//Figure out a way to independently move the camera
+		DrawString("Paused", cameraX + SCREEN_WIDTH / 2 - 30, cameraY + SCREEN_HEIGHT / 2 - 10);
+		if(!gameRendersThroughPause){
+			break;
+		}
 	case GAME:
 		if(!planets.empty()){
 			for(unsigned int i = 0; i < planets.size(); i++){
@@ -755,12 +765,11 @@ void draw(){
 			}
 		}
 		break;
-	case PAUSE:
-		MoveCamera(0, 0);
-		DrawString("Paused", SCREEN_WIDTH / 2 - 30, SCREEN_HEIGHT / 2 - 10);
 	}
 
-	DrawString(std::string(std::string("FPS: ") + std::to_string(fps) + std::string(" TPS: ") + std::to_string(tps)).c_str(), 10, 10); 
+	DrawString(std::string(std::string("FPS: ") + std::to_string(fps) + std::string(" TPS: ") + std::to_string(tps)).c_str(), cameraX + 10, cameraY + 10); 
+
+	MoveCamera(cameraX, cameraY);
 
 	ClearScreen();
 }
@@ -773,6 +782,11 @@ void cleanup(){
 	//delete[] menuButtons;
 	//_CrtIsValidHeapPointer( pUserData ) Debug assertion failed
 	//delete &SCREEN_WIDTH, &SCREEN_HEIGHT, &WORLD_WIDTH, &WORLD_HEIGHT, &fps, &tps, &splashTexture, &instructionTexture, &stars, &backgroundLoop, &laserFireSound, &speedUpSound;
+}
+
+void positionCamera(int x, int y){
+	cameraX = x;
+	cameraY = y;
 }
 
 int main( int argc, char* argv[] )
