@@ -110,6 +110,7 @@ public:
 		timeLeft--;
 		if(timeLeft <= 0){
 			removeDrawable(this);
+			return;
 		}
 	}
 
@@ -196,6 +197,7 @@ public:
 
 		if(timeUntilDeath <= 0){
 			removeDrawable(this);
+			return;
 		}
 	}
 
@@ -414,7 +416,7 @@ public:
 
 		RotateSprite(texture, currentRotation);
 		MoveSprite(texture, x, y);
-		positionCamera(x - SCREEN_WIDTH / 2, y - SCREEN_HEIGHT / 2);
+		positionCamera((int)x - SCREEN_WIDTH / 2, (int)y - SCREEN_HEIGHT / 2);
 	}
 
 	unsigned int getWidth(){
@@ -461,9 +463,104 @@ public:
 	}
 };
 
+class Enemy : public ICollidable{
+public: 
+	int width, height;
+	float x, y, rotation, currentRotation, speed, scale;
+	SPRITE texture;
+
+	bool isAlive;
+
+	Enemy(SPRITE sprite, int x, int y, float rotation, int speed, int scale){
+		width = height = 64;
+
+		float width = (float)this->width * scale, height = (float)this->height * scale;
+
+		texture = DuplicateSprite(sprite);
+		this->x = (float)x;
+		this->y = (float)y;
+		this->rotation = rotation;
+		this->currentRotation = this->rotation;
+		this->speed = (float)speed;
+		this->scale = (float)scale;
+
+		SetSpriteScale(texture, width, height);
+		MoveSprite(texture, this->x, this->y);
+
+		isAlive = true;
+	}
+
+	void update(){
+		if(!isAlive){
+			removeDrawable(this);
+			return;
+		}
+
+		//TODO face the player
+
+		if(rotation - currentRotation > 180){
+			currentRotation += 360;
+		}else if(rotation - currentRotation < -180){
+			currentRotation -= 360;
+		}
+
+		for(int index = 0; index < 2; index++){
+			if(currentRotation > rotation){
+				currentRotation -= 5;
+			}else if(currentRotation < rotation){
+				currentRotation += 5;
+			}
+		}
+
+		RotateSprite(texture, currentRotation);
+		MoveSprite(texture, x, y);
+
+	}
+
+	SPRITE getTexture(){
+		return texture;
+	}
+
+	unsigned int getCX(){
+		return (int)(x - width / 2);
+	}
+	
+	unsigned int getCY(){
+		return (int)(y - height / 2);
+	}
+
+	unsigned int getWidth(){
+		return width;
+	}
+
+	unsigned int getHeight(){
+		return height;
+	}
+
+	bool isCollideTester(){
+		return true;
+	}
+	
+	void onCollide(ICollidable* col){
+		if(col->getColliderName() == "bullet" && !(col->parent == this)){
+			col->onTesterMessage(this);
+			isAlive = false;
+		}
+	}
+
+	void onTesterMessage(ICollidable* col){
+		isAlive = false;
+	}
+
+	std::string getColliderName(){
+		return "enemy";
+	}
+};
+
 class Game{
 public:
-	int powerUpSpawn, healthUpSpawn, powerUpFrequency, healthUpFrequency;
+	int powerUpSpawn, healthUpSpawn, powerUpFrequency, healthUpFrequency, gameTicks;
+	float proceduralDifficulty;
 
 	Game(){
 		init();
@@ -527,6 +624,7 @@ public:
 		laserPowerUpSprite = CreateSprite("./images/powerkit.png", 128, 128, false);
 		healthPowerUpSprite = CreateSprite("./images/healthkit.png", 128, 128, false);
 		playerSprite = CreateSprite("./images/tanker.png", 64, 64, true);
+		enemySprite = CreateSprite("./images/enemy.png", 64, 64, true);
 
 		initGame();
 		currentState = GAME;
@@ -537,11 +635,15 @@ public:
 		healthUpFrequency = (int)(20 * tickLimit);
 		powerUpSpawn = 0;
 		healthUpSpawn = healthUpFrequency / 4;
+		proceduralDifficulty = 1.F;
+		gameTicks = 0;
 
 		//Call all the IDrawable initialisation here
 		Player* pl = new Player(playerSprite);
 		aiTrackTarget = pl;
 		addDrawable(pl);
+
+		addDrawable(new Enemy(enemySprite, 50, 50, ROT_EAST, 0, 1));
 
 		generatePlanets();
 
@@ -598,6 +700,7 @@ public:
 		case LOADING:
 			preloadGame();
 		case GAME:
+			//applyDifficulty();
 			if(powerUpSpawn <= 0){
 
 				int powerUpX = Random::random(64, WORLD_WIDTH - 64);
@@ -648,6 +751,8 @@ public:
 				BASS_Pause();
 			}
 
+			gameTicks++;
+
 			break;
 		case PAUSE:
 			if(quitTickDown == 1){
@@ -657,6 +762,15 @@ public:
 		}
 		
 		return -1;
+	}
+
+	void applyDifficulty(){
+		if(((int)gameTicks % (int)(15 * tickLimit)) == 0){
+			proceduralDifficulty += 0.1F;
+
+			powerUpFrequency *= (int)proceduralDifficulty;
+			healthUpFrequency *= (int)(proceduralDifficulty / 2);
+		}
 	}
 };
 
@@ -769,7 +883,7 @@ void draw(){
 
 	DrawString(std::string(std::string("FPS: ") + std::to_string(fps) + std::string(" TPS: ") + std::to_string(tps)).c_str(), cameraX + 10, cameraY + 10); 
 
-	MoveCamera(cameraX, cameraY);
+	MoveCamera((float)cameraX, (float)cameraY);
 
 	ClearScreen();
 }

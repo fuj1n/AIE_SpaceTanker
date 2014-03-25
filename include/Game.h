@@ -16,6 +16,8 @@ SPRITE laserPowerUpSprite;
 SPRITE healthPowerUpSprite;
 SPRITE playerSprite;
 
+SPRITE enemySprite;
+
 //Sounds
 HSTREAM backgroundLoop;
 HSTREAM laserFireSound;
