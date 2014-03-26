@@ -80,6 +80,10 @@ public:
 	}
 	
 	void update(){}
+
+	void destroySprites(){
+		DestroySprite(texture);
+	}
 };
 
 class Powerup : public ICollidable{
@@ -87,7 +91,8 @@ public:
 	float width, height;
 	char* powerupType;
 
-	unsigned int x, y, texture;
+	unsigned int x, y;
+	SPRITE texture;
 	int timeLeft;
 
 	Powerup(char* type, SPRITE sprite, int x, int y, int stayTime){
@@ -112,6 +117,10 @@ public:
 			removeDrawable(this);
 			return;
 		}
+	}
+
+	void destroySprites(){
+		DestroySprite(texture);
 	}
 
 	unsigned int getCX(){
@@ -201,6 +210,10 @@ public:
 		}
 	}
 
+	void destroySprites(){
+		DestroySprite(texture);
+	}
+
 	unsigned int getCX(){
 		return (int)x;
 	}
@@ -240,7 +253,7 @@ public:
 	float x, y, rotation, currentRotation, speed, scale;
 	int health;
 
-	int shootCooldown, betterAmmoCooldown;
+	int shootCooldown, betterAmmoCooldown, sprintCooldown, maxSprintTime;
 
 	SPRITE texture;
 	Player(SPRITE sprite){
@@ -254,6 +267,8 @@ public:
 		speed = 1.5F;
 		health = 100;
 		texture = DuplicateSprite(sprite);
+		sprintCooldown = 0;
+		maxSprintTime = (int)(5 * tickLimit);
 		SetSpriteScale(texture, w, h);
 		MoveSprite(texture, x, y);
 	}
@@ -279,6 +294,8 @@ public:
 	}
 
 	void update(){
+		static bool isSCooldown;
+
 		//Decrement the values for timed "things"
 		if(shootCooldown > 0){
 			shootCooldown--;
@@ -289,14 +306,32 @@ public:
 			}
 			betterAmmoCooldown--;
 		}
+		if(sprintCooldown > 0){
+			static bool cooldownTick;
+			if(cooldownTick){
+				sprintCooldown--;
+			}
+			cooldownTick = !cooldownTick;
+		}else{
+			isSCooldown = false;
+		}
 
 		static bool lastSpeed;
-		float speed = this->speed * (IsKeyDown(KEY_LSHIFT) || IsKeyDown(KEY_RSHIFT) ? 2 : 1);
-		if(!lastSpeed && (IsKeyDown(KEY_LSHIFT) || IsKeyDown(KEY_RSHIFT))){
-			lastSpeed = true;
-			BASS_ChannelPlay(speedUpSound, false);
-		}else if(lastSpeed && (!IsKeyDown(KEY_LSHIFT) || IsKeyDown(KEY_RSHIFT))){
+		float speed = this->speed;
+
+		if(sprintCooldown <= maxSprintTime && !isSCooldown){
+			speed = this->speed * (IsKeyDown(KEY_LSHIFT) || IsKeyDown(KEY_RSHIFT) ? 2 : 1);
+			sprintCooldown += IsKeyDown(KEY_LSHIFT) || IsKeyDown(KEY_RSHIFT) ? 1 : 0;
+			if(!lastSpeed && (IsKeyDown(KEY_LSHIFT) || IsKeyDown(KEY_RSHIFT))){
+				lastSpeed = true;
+				BASS_ChannelPlay(speedUpSound, false);
+			}else if(lastSpeed && (!IsKeyDown(KEY_LSHIFT) || IsKeyDown(KEY_RSHIFT))){
+				lastSpeed = false;
+				isSCooldown = true;
+			}
+		}else{
 			lastSpeed = false;
+			isSCooldown = true;
 		}
 
 		if(IsKeyDown('W') && IsKeyDown('A')){
@@ -419,6 +454,10 @@ public:
 		positionCamera((int)x - SCREEN_WIDTH / 2, (int)y - SCREEN_HEIGHT / 2);
 	}
 
+	void destroySprites(){
+		DestroySprite(texture);
+	}
+
 	unsigned int getWidth(){
 		return width;	
 	}
@@ -439,6 +478,7 @@ public:
 			col->onTesterMessage(this);
 		}else if(colliderName == "enemy"){
 			health -= 15;
+			col->onTesterMessage(this);
 		}else if(colliderName == "powerup::health"){
 			health += 35;
 			col->onTesterMessage(this);
@@ -468,35 +508,100 @@ public:
 	int width, height;
 	float x, y, rotation, currentRotation, speed, scale;
 	SPRITE texture;
+	SPRITE explosionTextures[numExplosions];
 
-	bool isAlive;
+	int followRange;
 
-	Enemy(SPRITE sprite, int x, int y, float rotation, int speed, int scale){
+	bool isAlive, isDead;
+
+	Enemy(SPRITE sprite, SPRITE explosionSprites[], int x, int y, float rotation, float speed, float scale = 1, float explosionScale = 1.5f, int followRange = 240){
 		width = height = 64;
 
 		float width = (float)this->width * scale, height = (float)this->height * scale;
 
 		texture = DuplicateSprite(sprite);
+		
+		for(int i = 0; i < numExplosions; i++){
+			explosionTextures[i] = DuplicateSprite(explosionSprites[i]);
+		}
+
 		this->x = (float)x;
 		this->y = (float)y;
 		this->rotation = rotation;
 		this->currentRotation = this->rotation;
-		this->speed = (float)speed;
+		this->speed = speed;
 		this->scale = (float)scale;
 
 		SetSpriteScale(texture, width, height);
 		MoveSprite(texture, this->x, this->y);
+		for(int i = 0; i < numExplosions; i++){
+			float width = (float)this->width * explosionScale, height = (float)this->height * explosionScale;
+			SetSpriteScale(explosionTextures[i], width, height);
+			MoveSprite(explosionTextures[i], this->x, this->y);
+		}
+
+		this->followRange = followRange;
 
 		isAlive = true;
 	}
 
 	void update(){
-		if(!isAlive){
+		if(!isAlive && isDead){
 			removeDrawable(this);
+			return;
+		}else if(!isAlive){
+			static int ticks;
+			static int tex;
+			if(tex < 0){
+				tex = 0;
+				ticks = 0;
+			}
+
+			if(ticks % (int)(tickLimit / 5) == 0){
+				tex++;
+			}
+			ticks++;
+
+			if(tex == numExplosions){
+				isDead = true;
+				tex--;
+			}
+
+			width = tex;
+
 			return;
 		}
 
-		//TODO face the player
+		int xSide = 0, ySide = 0;
+
+		//Facing the player
+		std::cout << aiTrackTarget->getTX() - x << " " << aiTrackTarget->getTY() - y << std::endl;
+		if(aiTrackTarget != 0 && (aiTrackTarget->getTX() - x < followRange && aiTrackTarget->getTX() - x > -followRange) && (aiTrackTarget->getTY() - y < followRange && aiTrackTarget->getTY() - y > -followRange)){
+			xSide = aiTrackTarget->getTX() < x ? -1 : aiTrackTarget->getTX() > x ? 1 : 0;
+			ySide = aiTrackTarget->getTY() < y ? -1 : aiTrackTarget->getTY() > y ? 1 : 0;
+
+			if(xSide == -1 && ySide == -1){
+				rotation = ROT_NORTHWEST;
+			}else if(xSide == 0 && ySide == -1){
+				rotation = ROT_NORTH;
+			}else if(xSide == 1 && ySide == -1){
+				rotation = ROT_NORTHEAST;
+			}else if(xSide == 1 && ySide == 0){
+				rotation = ROT_EAST;
+			}else if(xSide == 1 && ySide == 1){
+				rotation = ROT_SOUTHEAST;
+			}else if(xSide == 0 && ySide == 1){
+				rotation = ROT_SOUTH;
+			}else if(xSide == -1 && ySide == 1){
+				rotation = ROT_SOUTHWEST;
+			}else if(xSide == -1 && ySide == 0){
+				rotation = ROT_WEST;
+			}else{
+				rotation = currentRotation > 180 ? 1.f : 181.f;
+			}
+		}else{
+			rotation = currentRotation > 180.f ? 1 : 181.f;
+		}
 
 		if(rotation - currentRotation > 180){
 			currentRotation += 360;
@@ -512,13 +617,51 @@ public:
 			}
 		}
 
+		//Movement
+		switch(xSide){
+		case -1:
+			x -= 1 * speed;
+			break;
+		case 0:
+			break;
+		case 1:
+			x += 1 * speed;
+			break;
+		}
+
+		switch(ySide){
+		case -1:
+			y -= 1 * speed;
+			break;
+		case 0:
+			break;
+		case 1:
+			y += 1 * speed;
+			break;
+		}
+
 		RotateSprite(texture, currentRotation);
 		MoveSprite(texture, x, y);
-
+		for(int i = 0; i < numExplosions; i++){
+			RotateSprite(explosionTextures[i], currentRotation);
+			MoveSprite(explosionTextures[i], x, y);
+		}
 	}
 
 	SPRITE getTexture(){
-		return texture;
+		if(!isAlive){
+			return explosionTextures[width];
+		}else{
+			return texture;
+		}
+	}
+
+	void destroySprites(){
+		DestroySprite(texture);
+		for(int i = 0; i < numExplosions; i++){
+			DestroySprite(explosionTextures[i]);
+		}
+		delete[] &explosionTextures;
 	}
 
 	unsigned int getCX(){
@@ -545,15 +688,19 @@ public:
 		if(col->getColliderName() == "bullet" && !(col->parent == this)){
 			col->onTesterMessage(this);
 			isAlive = false;
+			isDead = false;
+			BASS_ChannelPlay(explosionSound, false);
 		}
 	}
 
 	void onTesterMessage(ICollidable* col){
 		isAlive = false;
+		isDead = false;
+		BASS_ChannelPlay(explosionSound, false);
 	}
 
 	std::string getColliderName(){
-		return "enemy";
+		return std::string("enemy") + (!isAlive ? std::string("::dead") : std::string(""));
 	}
 };
 
@@ -588,6 +735,7 @@ public:
 		powerUpSound = BASS_StreamCreateFile(false, "./sounds/powerup.wav", 0, 0, 0);
 		powerDownSound = BASS_StreamCreateFile(false, "./sounds/powerdown.wav", 0, 0, 0);
 		healthUpSound = BASS_StreamCreateFile(false, "./sounds/pickup.wav", 0, 0, 0);
+		explosionSound = BASS_StreamCreateFile(false, "./sounds/explode.wav", 0, 0, 0);
 	}
 
 	void generatePlanets(){
@@ -625,6 +773,10 @@ public:
 		healthPowerUpSprite = CreateSprite("./images/healthkit.png", 128, 128, false);
 		playerSprite = CreateSprite("./images/tanker.png", 64, 64, true);
 		enemySprite = CreateSprite("./images/enemy.png", 64, 64, true);
+		
+		for(int i = 0; i < numExplosions; i++){
+			explosionSprites[i] = CreateSprite((std::string("./images/explosion/") + std::to_string(i) + std::string(".png")).c_str(), 128, 128, true);
+		}
 
 		initGame();
 		currentState = GAME;
@@ -643,7 +795,7 @@ public:
 		aiTrackTarget = pl;
 		addDrawable(pl);
 
-		addDrawable(new Enemy(enemySprite, 50, 50, ROT_EAST, 0, 1));
+		addDrawable(new Enemy(enemySprite, explosionSprites, 250, 250, ROT_EAST, 1.5f, 1.f, 1.5f));
 
 		generatePlanets();
 
@@ -699,61 +851,72 @@ public:
 			break;
 		case LOADING:
 			preloadGame();
-		case GAME:
-			//applyDifficulty();
-			if(powerUpSpawn <= 0){
+		case GAME:{
+				int enemyCount = 0;
+				//applyDifficulty();
+				if(powerUpSpawn <= 0){
 
-				int powerUpX = Random::random(64, WORLD_WIDTH - 64);
-				int powerUpY = Random::random(64, WORLD_HEIGHT - 64);
-				int powerUpDespawn = (int)(Random::random(50, 300) * tickLimit);
+					int powerUpX = Random::random(64, WORLD_WIDTH - 64);
+					int powerUpY = Random::random(64, WORLD_HEIGHT - 64);
+					int powerUpDespawn = (int)(Random::random(50, 300) * tickLimit);
 
-				addDrawable(new Powerup("laser", laserPowerUpSprite, powerUpX, powerUpY, powerUpDespawn));
-				powerUpSpawn = powerUpFrequency;
-			}else{
-				powerUpSpawn--;
-			}
+					addDrawable(new Powerup("laser", laserPowerUpSprite, powerUpX, powerUpY, powerUpDespawn));
+					powerUpSpawn = powerUpFrequency;
+				}else{
+					powerUpSpawn--;
+				}
 
-			if(healthUpSpawn <= 0){
-				healthUpSpawn = healthUpFrequency;
+				if(healthUpSpawn <= 0){
+					healthUpSpawn = healthUpFrequency;
 
-				int healthUpX = Random::random(64, WORLD_WIDTH - 64);
-				int healthUpY = Random::random(64, WORLD_HEIGHT - 64);
-				int healthUpDespawn = (int)(Random::random(100, 450) * tickLimit);
+					int healthUpX = Random::random(64, WORLD_WIDTH - 64);
+					int healthUpY = Random::random(64, WORLD_HEIGHT - 64);
+					int healthUpDespawn = (int)(Random::random(100, 450) * tickLimit);
 
-				addDrawable(new Powerup("health", healthPowerUpSprite, healthUpX, healthUpY, healthUpDespawn));
-			}else{
-				healthUpSpawn--;
-			}
+					addDrawable(new Powerup("health", healthPowerUpSprite, healthUpX, healthUpY, healthUpDespawn));
+				}else{
+					healthUpSpawn--;
+				}
 
-			drawables.shrink_to_fit();
-			if(!drawables.empty()){
-				for(unsigned int i = 0; i < drawables.size(); i++){
-					IDrawable* d = drawables.at(i);
-					ICollidable* col0 = dynamic_cast<ICollidable*>(d);
+				drawables.shrink_to_fit();
+				if(!drawables.empty()){
+					for(unsigned int i = 0; i < drawables.size(); i++){
+						IDrawable* d = drawables.at(i);
+						ICollidable* col0 = dynamic_cast<ICollidable*>(d);
 
-					if(col0 != 0 && col0->isCollideTester()){
-						for(unsigned int i1 = 0; i1 < drawables.size(); i1++){
-							ICollidable* col1 = dynamic_cast<ICollidable*>(drawables.at(i1));
-							if(col1 != 0){
-								if(col0 != col1 && (Collision::rect_intersects(col0->getCX(), col0->getCY(), col0->getWidth(), col0->getHeight(), col1->getCX(), col1->getCY(), col1->getWidth(), col1->getHeight()))){
-									col0->onCollide(col1);
+						if(col0 != 0 && col0->isCollideTester()){
+							for(unsigned int i1 = 0; i1 < drawables.size(); i1++){
+								ICollidable* col1 = dynamic_cast<ICollidable*>(drawables.at(i1));
+								if(col1 != 0){
+									if(col0 != col1 && (Collision::rect_intersects(col0->getCX(), col0->getCY(), col0->getWidth(), col0->getHeight(), col1->getCX(), col1->getCY(), col1->getWidth(), col1->getHeight()))){
+										col0->onCollide(col1);
+									}
 								}
 							}
 						}
+
+						//Count how many enemies there are using the main update loop
+						if(dynamic_cast<Enemy*>(d) != 0){
+							enemyCount++;
+						}
+
+						d->update();
 					}
-
-					d->update();
 				}
+
+				if(enemyCount < 100){
+					//enemy spawning limited to 100 enemies at a time
+				}
+
+				if(quitTickDown == 1){
+					currentState = PAUSE;
+					BASS_Pause();
+				}
+
+				gameTicks++;
+
+				break;
 			}
-
-			if(quitTickDown == 1){
-				currentState = PAUSE;
-				BASS_Pause();
-			}
-
-			gameTicks++;
-
-			break;
 		case PAUSE:
 			if(quitTickDown == 1){
 				currentState = GAME;
@@ -780,7 +943,7 @@ static void addDrawable(IDrawable* drawable){
 }
 
 static void removeDrawable(IDrawable* drawable){
-	DestroySprite(drawable->getTexture());
+	drawable->destroySprites();
 	for(unsigned int i = 0; i < drawables.size(); i++){
 		if(drawables.at(i) == drawable){
 			drawables.erase(drawables.begin() + i);
@@ -794,7 +957,7 @@ static void removeDrawable(IDrawable* drawable){
 static void clearDrawables(){
 	for(unsigned int i = 0; i < drawables.size(); i++){
 		drawables.shrink_to_fit();
-		DestroySprite(drawables.at(i)->getTexture());
+		drawables.at(i)->destroySprites();
 		drawables.erase(drawables.begin() + i);
 		i -= 1;
 	}
@@ -806,7 +969,7 @@ static void addPlanet(IDrawable* drawable){
 }
 
 static void removePlanet(IDrawable* drawable){
-	DestroySprite(drawable->getTexture());
+	drawable->destroySprites();
 	for(unsigned int i = 0; i < planets.size(); i++){
 		if(planets.at(i) == drawable){
 			planets.erase(planets.begin() + i);
@@ -820,7 +983,7 @@ static void removePlanet(IDrawable* drawable){
 static void clearPlanets(){
 	for(unsigned int i = 0; i < planets.size(); i++){
 		planets.shrink_to_fit();
-		DestroySprite(planets.at(i)->getTexture());
+		planets.at(i)->destroySprites();
 		planets.erase(planets.begin() + i);
 		i -= 1;
 	}

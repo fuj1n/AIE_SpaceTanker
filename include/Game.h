@@ -18,6 +18,9 @@ SPRITE playerSprite;
 
 SPRITE enemySprite;
 
+const int numExplosions = 10;
+SPRITE explosionSprites[numExplosions];
+
 //Sounds
 HSTREAM backgroundLoop;
 HSTREAM laserFireSound;
@@ -25,6 +28,7 @@ HSTREAM speedUpSound;
 HSTREAM powerUpSound;
 HSTREAM powerDownSound;
 HSTREAM healthUpSound;
+HSTREAM explosionSound;
 
 class IParent{
 
@@ -36,6 +40,7 @@ public:
 
 	virtual SPRITE getTexture() = 0;
 	virtual void update() = 0;
+	virtual void destroySprites() = 0;
 };
 
 class ICollidable : public IDrawable{
@@ -52,6 +57,7 @@ public:
 };
 
 class ITrackable{
+public:
 	virtual unsigned int getTX() = 0;
 	virtual unsigned int getTY() = 0;
 };
