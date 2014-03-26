@@ -661,7 +661,6 @@ public:
 		for(int i = 0; i < numExplosions; i++){
 			DestroySprite(explosionTextures[i]);
 		}
-		delete[] &explosionTextures;
 	}
 
 	unsigned int getCX(){
