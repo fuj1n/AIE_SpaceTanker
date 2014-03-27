@@ -514,13 +514,16 @@ public:
 
 	bool isAlive, isDead;
 
+	int explTicks;
+	int explTex;
+
 	Enemy(SPRITE sprite, SPRITE explosionSprites[], int x, int y, float rotation, float speed, float scale = 1, float explosionScale = 1.5f, int followRange = 240){
 		width = height = 64;
 
 		float width = (float)this->width * scale, height = (float)this->height * scale;
 
 		texture = DuplicateSprite(sprite);
-		
+
 		for(int i = 0; i < numExplosions; i++){
 			explosionTextures[i] = DuplicateSprite(explosionSprites[i]);
 		}
@@ -550,24 +553,20 @@ public:
 			removeDrawable(this);
 			return;
 		}else if(!isAlive){
-			static int ticks;
-			static int tex;
-			if(tex < 0){
-				tex = 0;
-				ticks = 0;
+			if(explTex < 0){
+				explTex = 0;
+				explTicks = 0;
 			}
 
-			if(ticks % (int)(tickLimit / 5) == 0){
-				tex++;
+			if(explTicks % (int)(tickLimit / 5) == 0){
+				explTex++;
 			}
-			ticks++;
+			explTicks++;
 
-			if(tex == numExplosions){
+			if(explTex == numExplosions){
 				isDead = true;
-				tex--;
+				explTex--;
 			}
-
-			width = tex;
 
 			return;
 		}
@@ -575,7 +574,6 @@ public:
 		int xSide = 0, ySide = 0;
 
 		//Facing the player
-		std::cout << aiTrackTarget->getTX() - x << " " << aiTrackTarget->getTY() - y << std::endl;
 		if(aiTrackTarget != 0 && (aiTrackTarget->getTX() - x < followRange && aiTrackTarget->getTX() - x > -followRange) && (aiTrackTarget->getTY() - y < followRange && aiTrackTarget->getTY() - y > -followRange)){
 			xSide = aiTrackTarget->getTX() < x ? -1 : aiTrackTarget->getTX() > x ? 1 : 0;
 			ySide = aiTrackTarget->getTY() < y ? -1 : aiTrackTarget->getTY() > y ? 1 : 0;
@@ -650,7 +648,7 @@ public:
 
 	SPRITE getTexture(){
 		if(!isAlive){
-			return explosionTextures[width];
+			return explosionTextures[explTex];
 		}else{
 			return texture;
 		}
@@ -685,17 +683,21 @@ public:
 	
 	void onCollide(ICollidable* col){
 		if(col->getColliderName() == "bullet" && !(col->parent == this)){
-			col->onTesterMessage(this);
+			if(isAlive){
+				col->onTesterMessage(this);
+				BASS_ChannelPlay(explosionSound, true);
+			}
 			isAlive = false;
 			isDead = false;
-			BASS_ChannelPlay(explosionSound, false);
 		}
 	}
 
 	void onTesterMessage(ICollidable* col){
+		if(isAlive){
+			BASS_ChannelPlay(explosionSound, true);
+		}
 		isAlive = false;
 		isDead = false;
-		BASS_ChannelPlay(explosionSound, false);
 	}
 
 	std::string getColliderName(){
@@ -793,8 +795,6 @@ public:
 		Player* pl = new Player(playerSprite);
 		aiTrackTarget = pl;
 		addDrawable(pl);
-
-		addDrawable(new Enemy(enemySprite, explosionSprites, 250, 250, ROT_EAST, 1.5f, 1.f, 1.5f));
 
 		generatePlanets();
 
@@ -903,8 +903,15 @@ public:
 					}
 				}
 
+				//enemy spawning limited to 100 enemies at a time
 				if(enemyCount < 100){
-					//enemy spawning limited to 100 enemies at a time
+					if(Random::random(0, 250) == 0){
+						int xPos = Random::random(0, WORLD_WIDTH);
+						int yPos = Random::random(0, WORLD_HEIGHT);
+						int followRange = Random::random(480, 640);
+
+						addDrawable(new Enemy(enemySprite, explosionSprites, xPos, yPos, ROT_EAST, 1.5f, 1.f, 1.5f, followRange));
+					}
 				}
 
 				if(quitTickDown == 1){
