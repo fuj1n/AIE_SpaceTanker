@@ -5,6 +5,17 @@
 
 typedef unsigned int SPRITE;
 
+typedef enum RotationDirections{
+	ROT_NORTH = 0,
+	ROT_NORTHWEST = 45,
+	ROT_WEST = 90,
+	ROT_SOUTHWEST = 135,
+	ROT_SOUTH = 180,
+	ROT_SOUTHEAST = 225,
+	ROT_EAST = 270,
+	ROT_NORTHEAST = 315
+}RotationDirections;
+
 //Sprites
 SPRITE splashTexture;
 SPRITE instructionTexture;
@@ -29,6 +40,8 @@ HSTREAM powerUpSound;
 HSTREAM powerDownSound;
 HSTREAM healthUpSound;
 HSTREAM explosionSound;
+
+const int WORLD_WIDTH = 960, WORLD_HEIGHT = 960;
 
 class IParent{
 

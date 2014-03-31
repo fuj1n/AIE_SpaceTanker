@@ -17,10 +17,10 @@
 #include <sstream>
 
 const char* GAME_NAME = "Space Tanker";
-const char* VERSION = "v0.3";
+const char* VERSION = "v0.4";
 
 int SCREEN_WIDTH = 640, SCREEN_HEIGHT = 480;
-const int WORLD_WIDTH = 960, WORLD_HEIGHT = 960;
+
 int fps, tps;
 
 int cameraX = 0, cameraY = 0;
@@ -30,17 +30,6 @@ double tickLimit = 60.0;
 bool gameRendersThroughPause = true;
 
 ITrackable* aiTrackTarget;
-
-typedef enum RotationDirections{
-	ROT_NORTH = 0,
-	ROT_NORTHWEST = 45,
-	ROT_WEST = 90,
-	ROT_SOUTHWEST = 135,
-	ROT_SOUTH = 180,
-	ROT_SOUTHEAST = 225,
-	ROT_EAST = 270,
-	ROT_NORTHEAST = 315
-}RotationDirections;
 
 void addDrawable(IDrawable*);
 void removeDrawable(IDrawable*);
@@ -243,7 +232,7 @@ public:
 	}
 
 	std::string getColliderName(){
-		return "bullet";
+		return std::string("bullet") + (timeUntilDeath <= 0 ? std::string("::dead") : std::string(""));
 	}
 };
 
@@ -334,96 +323,12 @@ public:
 			isSCooldown = true;
 		}
 
-		if(IsKeyDown('W') && IsKeyDown('A')){
-			rotation = ROT_NORTHWEST;
-			x -= 1 * speed;
-			y -= 1 * speed;
-		}else if(IsKeyDown('W') && IsKeyDown('D')){
-			rotation = ROT_NORTHEAST;
-			x += 1 * speed;
-			y -= 1 * speed;
-		}else if(IsKeyDown('S') && IsKeyDown('A')){
-			rotation = ROT_SOUTHWEST;
-			x -= 1 * speed;
-			y += 1 * speed;
-		}else if(IsKeyDown('S') && IsKeyDown('D')){
-			rotation = ROT_SOUTHEAST;
-			x += 1 * speed;
-			y += 1 * speed;
-		}else if(IsKeyDown('W')){
-			rotation = ROT_NORTH;
-			y -= 1 * speed;
-		}else if(IsKeyDown('S')){
-			rotation = ROT_SOUTH;
-			y += 1 * speed;
-		}else if(IsKeyDown('A')){
-			rotation = ROT_WEST;
-			x -= 1 * speed;
-		}else if(IsKeyDown('D')){
-			rotation = ROT_EAST;
-			x += 1 * speed;
-		}
-
-		if(x < width){
-			x = (float)width;
-		}else if(x > WORLD_WIDTH - width / 2){
-			x = (float)(WORLD_WIDTH - width / 2);
-		}
-
-		if(y < height / 2){
-			y = (float)(height / 2);
-		}else if(y > WORLD_HEIGHT - height / 2){
-			y = (float)(WORLD_HEIGHT - height / 2);
-		}
+		GameUtils::movePlayer(x, y, rotation, speed, IsKeyDown('w'), IsKeyDown('s'), IsKeyDown('a'), IsKeyDown('d'), width, height);
 
 		if(IsKeyDown(VK_SPACE) && shootCooldown <= 0){
 			int projXDir = -1337, projYDir = -1337, projX = (int)x, projY = (int)y;
-			switch((int)rotation){
-			case ROT_NORTH:
-				projXDir = 0;
-				projYDir = -1;
-				projY -= 40;
-				break;
-			case ROT_NORTHEAST:
-				projXDir = 1;
-				projYDir = -1;
-				projX += 25;
-				projY -= 25;
-				break;
-			case ROT_EAST:
-				projXDir = 1;
-				projYDir = 0;
-				projX += 40;
-				break;
-			case ROT_SOUTHEAST:
-				projXDir = 1;
-				projYDir = 1;
-				projX += 25;
-				projY += 25;
-				break;
-			case ROT_SOUTH:
-				projXDir = 0;
-				projYDir = 1;
-				projY += 40;
-				break;
-			case ROT_SOUTHWEST:
-				projXDir = -1;
-				projYDir = 1;
-				projX -= 25;
-				projY += 25;
-				break;
-			case ROT_WEST:
-				projXDir = -1;
-				projYDir = 0;
-				projX -= 40;
-				break;
-			case ROT_NORTHWEST:
-				projXDir = -1;
-				projYDir = -1;
-				projX -= 25;
-				projY -= 25;
-				break;
-			}
+			
+			GameUtils::getProjectilePropertyModifiers(rotation, projXDir, projYDir, projX, projY);
 
 			if(projXDir != -1337 && projYDir != -1337){
 				Projectile* projectile = new Projectile(laserBeamSprite, projX, projY, projXDir, projYDir, rotation, betterAmmoCooldown > 0 ? 5.5f : 4.5f, betterAmmoCooldown > 0 ? 1.5f : 1, betterAmmoCooldown > 0 ? SColour(0x00FFFFFF) : SColour(0xFFFF00FF), betterAmmoCooldown > 0 ? 30 : 20, betterAmmoCooldown > 0, this);
@@ -433,21 +338,7 @@ public:
 			}
 		}
 
-		if(rotation - currentRotation > 180){
-			currentRotation += 360;
-		}else if(rotation - currentRotation < -180){
-			currentRotation -= 360;
-		}
-
-		//The bigger the number after the < operator, the faster the rotation occurs
-		//Reasons for high speed: cosmetic use only, and the bullet will not fire relatively to this cosmetic rotation(probably)
-		for(int index = 0; index < 2; index++){
-			if(currentRotation > rotation){
-				currentRotation -= 5;
-			}else if(currentRotation < rotation){
-				currentRotation += 5;
-			}
-		}
+		GameUtils::currRotation(currentRotation, rotation);
 
 		RotateSprite(texture, currentRotation);
 		MoveSprite(texture, x, y);
@@ -474,7 +365,7 @@ public:
 		std::string colliderName = col->getColliderName();
 
 		if(colliderName == "bullet" && !(col->parent == this)){
-			health -= 5;
+			health -= 10;
 			col->onTesterMessage(this);
 		}else if(colliderName == "enemy"){
 			health -= 15;
@@ -578,42 +469,12 @@ public:
 			xSide = aiTrackTarget->getTX() < x ? -1 : aiTrackTarget->getTX() > x ? 1 : 0;
 			ySide = aiTrackTarget->getTY() < y ? -1 : aiTrackTarget->getTY() > y ? 1 : 0;
 
-			if(xSide == -1 && ySide == -1){
-				rotation = ROT_NORTHWEST;
-			}else if(xSide == 0 && ySide == -1){
-				rotation = ROT_NORTH;
-			}else if(xSide == 1 && ySide == -1){
-				rotation = ROT_NORTHEAST;
-			}else if(xSide == 1 && ySide == 0){
-				rotation = ROT_EAST;
-			}else if(xSide == 1 && ySide == 1){
-				rotation = ROT_SOUTHEAST;
-			}else if(xSide == 0 && ySide == 1){
-				rotation = ROT_SOUTH;
-			}else if(xSide == -1 && ySide == 1){
-				rotation = ROT_SOUTHWEST;
-			}else if(xSide == -1 && ySide == 0){
-				rotation = ROT_WEST;
-			}else{
-				rotation = currentRotation > 180 ? 1.f : 181.f;
-			}
+			GameUtils::rotate(rotation, xSide, ySide);
 		}else{
 			rotation = currentRotation > 180.f ? 1 : 181.f;
 		}
 
-		if(rotation - currentRotation > 180){
-			currentRotation += 360;
-		}else if(rotation - currentRotation < -180){
-			currentRotation -= 360;
-		}
-
-		for(int index = 0; index < 2; index++){
-			if(currentRotation > rotation){
-				currentRotation -= 5;
-			}else if(currentRotation < rotation){
-				currentRotation += 5;
-			}
-		}
+		GameUtils::currRotation(currentRotation, rotation);
 
 		//Movement
 		switch(xSide){
