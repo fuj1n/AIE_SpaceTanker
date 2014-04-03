@@ -1,10 +1,11 @@
 #include "IDrawable.h"
 #include "AIE.h"
 #include "Application.h"
+#include "BaseClass.h"
 
 #pragma once
 
-class Powerup : public ICollidable{
+class Powerup : public ICollidable, BaseClass{
 private:
 	float width, height;
 	char* powerupType;

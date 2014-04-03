@@ -1,9 +1,9 @@
 #include "IDrawable.h"
-#include "Application.h"
+#include "BaseClass.h"
 
 #pragma once
 
-class Enemy : public ICollidable{
+class Enemy : public ICollidable, BaseClass{
 private: 
 	int width, height;
 	float x, y, rotation, currentRotation, speed, scale;

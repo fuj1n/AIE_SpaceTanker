@@ -13,9 +13,11 @@ Player::Player(SPRITE sprite){
 	health = 100;
 	texture = DuplicateSprite(sprite);
 	sprintCooldown = 0;
-	maxSprintTime = (int)(5 * Application::instance->getTickLimit());
+	maxSprintTime = (int)(5 * getApplication()->getTickLimit());
 	SetSpriteScale(texture, w, h);
 	MoveSprite(texture, x, y);
+	getApplication()->maxSprintCooldown = maxSprintTime;
+	getApplication()->sprintCooldown = sprintCooldown;
 }
 
 SPRITE Player::getTexture(){
@@ -47,7 +49,7 @@ void Player::update(){
 	}
 	if(betterAmmoCooldown > 0){
 		if(betterAmmoCooldown == 1){
-			BASS_ChannelPlay(Application::instance->getGameObjects()->powerDownSound, false);
+			BASS_ChannelPlay(getApplication()->getGameObjects()->powerDownSound, false);
 		}
 		betterAmmoCooldown--;
 	}
@@ -69,7 +71,7 @@ void Player::update(){
 		sprintCooldown += IsKeyDown(KEY_LSHIFT) || IsKeyDown(KEY_RSHIFT) ? 1 : 0;
 		if(!lastSpeed && (IsKeyDown(KEY_LSHIFT) || IsKeyDown(KEY_RSHIFT))){
 			lastSpeed = true;
-			BASS_ChannelPlay(Application::instance->getGameObjects()->speedUpSound, false);
+			BASS_ChannelPlay(getApplication()->getGameObjects()->speedUpSound, false);
 		}else if(lastSpeed && (!IsKeyDown(KEY_LSHIFT) || IsKeyDown(KEY_RSHIFT))){
 			lastSpeed = false;
 			isSCooldown = true;
@@ -87,10 +89,10 @@ void Player::update(){
 		GameUtils::getProjectilePropertyModifiers(rotation, projXDir, projYDir, projX, projY);
 	
 		if(projXDir != -1337 && projYDir != -1337){
-			Projectile* projectile = new Projectile(Application::instance->getGameObjects()->laserBeamSprite, projX, projY, projXDir, projYDir, rotation, betterAmmoCooldown > 0 ? 5.5f : 4.5f, betterAmmoCooldown > 0 ? 1.5f : 1, betterAmmoCooldown > 0 ? SColour(0x00FFFFFF) : SColour(0xFFFF00FF), betterAmmoCooldown > 0 ? 30 : 20, betterAmmoCooldown > 0, this);
-			Application::instance->addDrawable(projectile);
-			BASS_ChannelPlay(Application::instance->getGameObjects()->laserFireSound, false);
-			shootCooldown = (int)(0.5 * Application::instance->getTickLimit());
+			Projectile* projectile = new Projectile(getApplication()->getGameObjects()->laserBeamSprite, projX, projY, projXDir, projYDir, rotation, betterAmmoCooldown > 0 ? 5.5f : 4.5f, betterAmmoCooldown > 0 ? 1.5f : 1, betterAmmoCooldown > 0 ? SColour(0x00FFFFFF) : SColour(0xFFFF00FF), betterAmmoCooldown > 0 ? 30 : 20, betterAmmoCooldown > 0, this);
+			getApplication()->addDrawable(projectile);
+			BASS_ChannelPlay(getApplication()->getGameObjects()->laserFireSound, false);
+			shootCooldown = (int)(0.5 * getApplication()->getTickLimit());
 		}
 	}
 
@@ -98,7 +100,8 @@ void Player::update(){
 
 	RotateSprite(texture, currentRotation);
 	MoveSprite(texture, x, y);
-	Application::instance->positionCamera((int)x - Application::instance->getScreenWidth() / 2, (int)y - Application::instance->getScreenHeight() / 2);
+	getApplication()->positionCamera((int)x - getApplication()->getScreenWidth() / 2, (int)y - getApplication()->getScreenHeight() / 2);
+	getApplication()->sprintCooldown = sprintCooldown;
 }
 
 void Player::destroySprites(){
@@ -129,11 +132,11 @@ void Player::onCollide(ICollidable* col){
 	}else if(colliderName == "powerup::health"){
 		health += 35;
 		col->onTesterMessage(this);
-		BASS_ChannelPlay(Application::instance->getGameObjects()->healthUpSound, false);
+		BASS_ChannelPlay(getApplication()->getGameObjects()->healthUpSound, false);
 	}else if(colliderName == "powerup::laser"){
 		betterAmmoCooldown = 900;
 		col->onTesterMessage(this);
-		BASS_ChannelPlay(Application::instance->getGameObjects()->powerUpSound, false);
+		BASS_ChannelPlay(getApplication()->getGameObjects()->powerUpSound, false);
 	}
 
 	if(health < 0){

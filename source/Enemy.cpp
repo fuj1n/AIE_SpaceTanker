@@ -36,7 +36,7 @@ Enemy::Enemy(SPRITE sprite, SPRITE explosionSprites[], int x, int y, float rotat
 
 void Enemy::update(){
 	if(!isAlive && isDead){
-		Application::instance->removeDrawable(this);
+		getApplication()->removeDrawable(this);
 		return;
 	}else if(!isAlive){
 		if(explTex < 0){
@@ -44,7 +44,7 @@ void Enemy::update(){
 			explTicks = 0;
 		}
 
-		if(explTicks % (int)(Application::instance->getTickLimit() / 5) == 0){
+		if(explTicks % (int)(getApplication()->getTickLimit() / 5) == 0){
 			explTex++;
 		}
 		explTicks++;
@@ -60,9 +60,9 @@ void Enemy::update(){
 	int xSide = 0, ySide = 0;
 
 	//Facing the player
-	if(Application::instance->getTrackTarget() != 0 && (Application::instance->getTrackTarget()->getTX() - x < followRange && Application::instance->getTrackTarget()->getTX() - x > -followRange) && (Application::instance->getTrackTarget()->getTY() - y < followRange && Application::instance->getTrackTarget()->getTY() - y > -followRange)){
-		xSide = Application::instance->getTrackTarget()->getTX() < x ? -1 : Application::instance->getTrackTarget()->getTX() > x ? 1 : 0;
-		ySide = Application::instance->getTrackTarget()->getTY() < y ? -1 : Application::instance->getTrackTarget()->getTY() > y ? 1 : 0;
+	if(getApplication()->getTrackTarget() != 0 && (getApplication()->getTrackTarget()->getTX() - x < followRange && getApplication()->getTrackTarget()->getTX() - x > -followRange) && (getApplication()->getTrackTarget()->getTY() - y < followRange && getApplication()->getTrackTarget()->getTY() - y > -followRange)){
+		xSide = getApplication()->getTrackTarget()->getTX() < x ? -1 : getApplication()->getTrackTarget()->getTX() > x ? 1 : 0;
+		ySide = getApplication()->getTrackTarget()->getTY() < y ? -1 : getApplication()->getTrackTarget()->getTY() > y ? 1 : 0;
 		
 		GameUtils::rotate(rotation, xSide, ySide);
 	}else{
@@ -141,7 +141,7 @@ void Enemy::onCollide(ICollidable* col){
 	if(col->getColliderName() == "bullet" && !(col->parent == this)){
 		if(isAlive){
 			col->onTesterMessage(this);
-			BASS_ChannelPlay(Application::instance->getGameObjects()->explosionSound, true);
+			BASS_ChannelPlay(getApplication()->getGameObjects()->explosionSound, true);
 		}
 		isAlive = false;
 		isDead = false;
@@ -150,7 +150,7 @@ void Enemy::onCollide(ICollidable* col){
 
 void Enemy::onTesterMessage(ICollidable* col){
 	if(isAlive){
-		BASS_ChannelPlay(Application::instance->getGameObjects()->explosionSound, true);
+		BASS_ChannelPlay(getApplication()->getGameObjects()->explosionSound, true);
 	}
 	isAlive = false;
 	isDead = false;

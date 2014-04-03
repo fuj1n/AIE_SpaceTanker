@@ -24,6 +24,9 @@ Application::~Application(){
 	delete &screenWidth;
 	delete &screenHeight;
 	delete &isFullscreen;
+
+	clearDrawables();
+	clearPlanets();
 }
 
 int Application::run(){
@@ -79,8 +82,6 @@ int Application::run(){
     } while ( quitStatus == -1 && FrameworkUpdate() == false );
 
 	BASS_Free();
-
-	cleanup();
 
 	Shutdown();
 
@@ -139,6 +140,13 @@ void Application::draw(){
 				DrawSprite(d->getTexture());
 			}
 		}
+
+		if(maxSprintCooldown > 0 && sprintCooldown > 0){
+			float percent = (float)sprintCooldown / (float)maxSprintCooldown;
+			//I don't trust drawLine, seems semi-broken
+			DrawIO::drawLine(cameraX + 20.f, cameraY + screenHeight - 25.f, percent * (float)(screenWidth - 40), 20.f, 0.f, SColour(0xFFFF00FF));
+		}
+
 		break;
 	}
 
@@ -147,15 +155,6 @@ void Application::draw(){
 	MoveCamera((float)cameraX, (float)cameraY);
 
 	ClearScreen();
-}
-
-void Application::cleanup(){
-	clearDrawables();
-	clearPlanets();
-	//Triggers a breakpoint in AIE Template_d.exe
-	//delete[] menuButtons;
-	//_CrtIsValidHeapPointer( pUserData ) Debug assertion failed
-	//delete &SCREEN_WIDTH, &SCREEN_HEIGHT, &WORLD_WIDTH, &WORLD_HEIGHT, &fps, &tps, &splashTexture, &instructionTexture, &stars, &backgroundLoop, &laserFireSound, &speedUpSound;
 }
 
 void Application::positionCamera(int x, int y){
@@ -328,6 +327,7 @@ void Application::initGame(){
 }
 
 int Application::updateGame(){
+	DrawIO::update();
 	static int quitTickDown;
 	if(IsKeyDown(KEY_ESC)){
 		if(quitTickDown >= (2 * 60)){

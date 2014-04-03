@@ -1,6 +1,7 @@
 #include "AIE.h"
 #include "Application.h"
 #include <random>
+#include <vector>
 
 #pragma once
 
@@ -184,6 +185,47 @@ namespace{
 	namespace Random{
 		int random(int nMin, int nMax){
 			return nMin + (int)((double)rand() / (RAND_MAX+1) * (nMax-nMin+1));
+		}
+	}
+
+	namespace DrawIO{
+		SPRITE line = 1337;
+
+		std::vector<SPRITE> destroyQueue;
+
+		void update(){
+			if(!destroyQueue.empty()){
+				for(unsigned int i = 0; i < destroyQueue.size(); i++){
+					DestroySprite(destroyQueue.at(i));
+				}
+				destroyQueue.clear();
+			}
+		}
+
+		void drawLine(float x, float y, float length, float thickness, float rotation, SColour color = SColour(0xFFFFFFFF)){
+			if(line == 1337){
+				line = CreateSprite("./images/line.png", 1, 1, false);
+			}
+
+			SPRITE line2 = DuplicateSprite(line);
+			SetSpriteScale(line2, length, thickness);
+			SetSpriteColour(line2, color);
+			RotateSprite(line2, rotation);
+			MoveSprite(line2, x, y);
+
+			DrawSprite(line2);
+			destroyQueue.push_back(line2);
+		}
+
+		void drawRect(float x, float y, float width, float height, float rotation, float thickness, SColour color = SColour(0xFFFFFFFF)){
+			drawLine(x, y, width, thickness, rotation, color);
+			drawLine(x, y + height - thickness, width, thickness, rotation, color);
+			drawLine(x, y, thickness, height, rotation, color);
+			drawLine(x + width - thickness, y, thickness, height, rotation, color);
+		}
+
+		void fillRect(float x, float y, float width, float height, float rotation, SColour color = SColour(0xFFFFFFFF)){
+			drawLine(x, y, width, height, rotation, color);
 		}
 	}
 }

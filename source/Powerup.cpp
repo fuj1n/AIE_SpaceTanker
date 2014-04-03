@@ -18,7 +18,7 @@ void Powerup::update(){
 	MoveSprite(texture, (float)x, (float)y);
 	timeLeft--;
 	if(timeLeft <= 0){
-		Application::instance->removeDrawable(this);
+		getApplication()->removeDrawable(this);
 		return;
 	}
 }

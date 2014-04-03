@@ -1,10 +1,11 @@
 #include "IDrawable.h"
 #include "AIE.h"
 #include "Application.h"
+#include "BaseClass.h"
 
 #pragma once
 
-class Projectile : public ICollidable{
+class Projectile : public ICollidable, BaseClass{
 private:
 	float width, height;
 	int xDir, yDir, timeUntilDeath;

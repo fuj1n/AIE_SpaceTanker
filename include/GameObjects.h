@@ -45,9 +45,9 @@ public:
 	HSTREAM explosionSound;
 
 	~GameObjects(){
-		delete &splashTexture, &logoTexture, &instructionTexture, &stars, &laserBeamSprite, &laserPowerUpSprite, &healthPowerUpSprite, &playerSprite, &enemySprite;
-		delete[4] &menuButtons;
-		delete[numExplosions] &explosionSprites;
+		//delete &splashTexture, &logoTexture, &instructionTexture, &stars, &laserBeamSprite, &laserPowerUpSprite, &healthPowerUpSprite, &playerSprite, &enemySprite;
+		//delete[4] &menuButtons;
+		//delete[numExplosions] &explosionSprites;
 
 		BASS_StreamFree(backgroundLoop);
 		BASS_StreamFree(laserFireSound);

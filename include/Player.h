@@ -2,10 +2,11 @@
 #include "Application.h"
 #include "AIE.h"
 #include "Projectile.h"
+#include "BaseClass.h"
 
 #pragma once
 
-class Player : public ITrackable, public ICollidable{
+class Player : public ITrackable, public ICollidable, BaseClass{
 private:
 	int width, height;
 	float x, y, rotation, currentRotation, speed, scale;

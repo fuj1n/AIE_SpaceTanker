@@ -4,7 +4,8 @@
 #include <string>
 
 int main(int argc, char* argv[]){
-	int displayWidth = 640, displayHeight = 480, displayFScreen = false;
+	int displayWidth = 640, displayHeight = 480;
+	bool displayFScreen = false;
 	for(int i = 0; i < argc; i++){
 		char* arg = argv[i];
 		
@@ -23,7 +24,8 @@ int main(int argc, char* argv[]){
 		Application* appl = new Application(displayWidth, displayHeight, displayFScreen);
 		int exitCode = appl->run();
 
-		delete appl;
+		//Causes a debug assertion failure
+		//delete appl;
 
 		return exitCode;
 	}

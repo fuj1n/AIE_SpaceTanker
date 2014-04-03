@@ -52,7 +52,6 @@ private:
 
 	int update();
 	void draw();
-	void cleanup();
 public:
 	static Application* instance;
 
@@ -73,6 +72,10 @@ public:
 	int getScreenWidth();
 	int getScreenHeight();
 	ITrackable* getTrackTarget();
+
+	//Drawing variables(purposely public)
+	int sprintCooldown;
+	int maxSprintCooldown;
 
 private:
 	int powerUpSpawn, healthUpSpawn, powerUpFrequency, healthUpFrequency, gameTicks;

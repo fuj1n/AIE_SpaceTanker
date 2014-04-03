@@ -12,7 +12,7 @@ Projectile::Projectile(SPRITE sprite, int x, int y, int xDir, int yDir, float ro
 	currentRotation = rotation;
 	this->speed = speed;
 	isSpecial = special;
-	timeUntilDeath = (int)(stayTime * Application::instance->getTickLimit());
+	timeUntilDeath = (int)(stayTime * getApplication()->getTickLimit());
 	texture = DuplicateSprite(sprite);
 	SetSpriteScale(texture, width, height);
 	SetSpriteColour(texture, color);
@@ -43,7 +43,7 @@ void Projectile::update(){
 	MoveSprite(texture, x, y);
 
 	if(timeUntilDeath <= 0){
-		Application::instance->removeDrawable(this);
+		getApplication()->removeDrawable(this);
 		return;
 	}
 }
