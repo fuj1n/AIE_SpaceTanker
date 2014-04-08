@@ -23,13 +23,6 @@ namespace{
 		const keyType noElement;
 
 		SimplifiedHashmap(){
-			if(typeof(keyType) == typeof(short) || typeof(keyType) == typeof(int) || typeof(keyType) == typeof(long)){
-				noElement = -1337;
-			}
-			if(std::is_pointer(keyType) || is_pointer(valueType)){
-				std::cout << "The keyType or the valueType is a pointer, chance of instability." << std::endl;
-			}
-
 			keys = new std::vector<keyType>();
 			values = new std::vector<valueType>();
 		}
@@ -371,7 +364,10 @@ namespace{
 					if(key != ""){
 						std::string value = map->get(key);
 						if(value != ""){
-							bo << key << ":" << value << std::endl;
+							bo << key << ":" << value;
+							if(i + 1 < map->size()){
+								bo << std::endl;
+							}
 						}
 					}
 				}
