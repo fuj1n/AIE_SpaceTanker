@@ -1,11 +1,109 @@
 #include "AIE.h"
 #include "Application.h"
+#include "CharSpriteUtils.cpp"
 #include <random>
 #include <vector>
+#include <string>
+#include <fstream>
+#include <initializer_list>
+#include <type_traits>
 
 #pragma once
 
 namespace{
+	template <class kty, class vty>
+	class SimplifiedHashmap{
+	public:
+		typedef kty keyType;
+		typedef vty valueType;
+	private:
+		std::vector<keyType>* keys;
+		std::vector<valueType>* values;
+	public:
+		const keyType noElement;
+
+		SimplifiedHashmap(){
+			if(typeof(keyType) == typeof(short) || typeof(keyType) == typeof(int) || typeof(keyType) == typeof(long)){
+				noElement = -1337;
+			}
+			if(std::is_pointer(keyType) || is_pointer(valueType)){
+				std::cout << "The keyType or the valueType is a pointer, chance of instability." << std::endl;
+			}
+
+			keys = new std::vector<keyType>();
+			values = new std::vector<valueType>();
+		}
+
+		valueType get(keyType key){
+			int vecID = getElementID(key);
+
+			if(vecID < 0){
+				return 0;
+			}
+			else{
+				return values->at(vecID);
+			}
+		}
+
+		const valueType &operator[](keyType key) const{
+			return get(key);
+		}
+
+		int getElementID(keyType key){
+			if(keys->size() != values->size()){
+				std::cout << "Fatal Error! Map desync.";
+				throw(42);
+			}
+
+			for(unsigned int i = 0; i < keys->size(); i++){
+				if(keys->at(i) == key){
+					return i;
+				}
+			}
+
+			return -1;
+		}
+
+		void put(keyType key, valueType value){
+			int vecID = getElementID(key);
+			if(vecID >= 0){
+				remove(key);
+			}
+			keys->shrink_to_fit();
+			values->shrink_to_fit();
+
+			keys->emplace_back(key);
+			values->emplace_back(value);
+		}
+
+		void remove(keyType key){
+			int vecID = getElementID(key);
+			if(vecID >= 0){
+				keys->erase(keys->begin() + vecID);
+				values->erase(values->begin() + vecID);
+				keys->shrink_to_fit();
+				values->shrink_to_fit();
+			}
+		}
+
+		unsigned int size(){
+			if(keys->size() != values->size()){
+				std::cout << "Fatal Error! Map desync.";
+				throw(42);
+			}
+
+			return keys->size();
+		}
+
+		std::vector<keyType>* getKeys(){
+			return keys;
+		}
+
+		std::vector<valueType>* getValues(){
+			return values;
+		}
+	};
+
 	namespace GameUtils{
 
 		/*
@@ -190,6 +288,7 @@ namespace{
 
 	namespace DrawIO{
 		SPRITE line = 1337;
+		SPRITE textSheet = 1337;
 
 		std::vector<SPRITE> destroyQueue;
 
@@ -226,6 +325,94 @@ namespace{
 
 		void fillRect(float x, float y, float width, float height, float rotation, SColour color = SColour(0xFFFFFFFF)){
 			drawLine(x, y, width, height, rotation, color);
+		}
+
+		void drawString(std::string s, float x, float y, float width, float height, float spacing, SColour color = SColour(0xFFFFFFFF), bool useDefaultForUnknown = false){
+			if(textSheet == 1337){
+				textSheet = loadFontSheet();
+			}
+
+			float cX = x, cY = y;
+
+			for(unsigned int i = 0; i < s.length(); i++){
+				char c = s.c_str()[i];
+				int sX, sY;
+				if(c != ' '){
+					getCharPosition(c, sX, sY);
+					if(sX == 0 && sY == 0 && useDefaultForUnknown){
+						DrawString(&c, (int)cX, (int)cY, color);
+					}
+					else{
+						SPRITE spr = getCharSprite(textSheet, sX, sY);
+						SetSpriteScale(spr, width, height);
+						SetSpriteColour(spr, color);
+						MoveSprite(spr, cX, cY);
+						DrawSprite(spr);
+						destroyQueue.push_back(spr);
+					}
+				}
+				cX += (width / 2) + spacing;
+			}
+		}
+
+		void drawString(char* s, float x, float y, float width, float height, float spacing, SColour color = SColour(0xFFFFFFFF)){
+			drawString(std::string(s), x, y, width, height, spacing, color);
+		}
+	}
+
+	namespace FileIO{
+		void write(char* file, SimplifiedHashmap<std::string, std::string>* map){
+			std::fstream bo;
+			
+			bo.open(file, std::ios_base::out);
+			if(bo.is_open()){
+				for(unsigned int i = 0; i < map->size(); i++){
+					std::string key = map->getKeys()->at(i);
+					if(key != ""){
+						std::string value = map->get(key);
+						if(value != ""){
+							bo << key << ":" << value << std::endl;
+						}
+					}
+				}
+
+				bo.sync();
+				bo.close();
+				bo.clear();
+			}else{
+				std::cout << "Error, access to file " << file << " is denied!" << std::endl;
+			}
+		}
+
+		void read(char* file, SimplifiedHashmap<std::string, std::string>* map){
+			std::fstream br;
+
+			br.open(file, std::ios_base::in);
+			if(br.is_open()){
+				int lineCounter = 1;
+				while(!br.eof()){
+					std::string inBuffer;
+					br >> inBuffer;
+
+					if(inBuffer.find(':', 0) == std::string::npos){
+						std::cout << "Syntax error on line " << lineCounter << " in file " << file << "." << std::endl;
+					}else{
+						size_t separatorLocation = inBuffer.find(':', 0);
+						std::string key = inBuffer.substr(0, separatorLocation);
+						std::string value = inBuffer.substr(separatorLocation + 1);;
+
+						map->put(key, value);
+					}
+
+					lineCounter++;
+				}
+
+				br.sync();
+				br.close();
+				br.clear();
+			}else{
+				std::cout << "Error, access to file " << file << " is denied or the file doesn't exist" << std::endl;
+			}
 		}
 	}
 }

@@ -22,8 +22,9 @@ int main(int argc, char* argv[]){
 		}
 
 		Application* appl = new Application(displayWidth, displayHeight, displayFScreen);
-		int exitCode = appl->run();
 
+		int exitCode = appl->run();
+		
 		//Causes a debug assertion failure
 		//delete appl;
 

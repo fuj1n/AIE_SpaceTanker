@@ -41,6 +41,12 @@ unsigned int Player::getTY(){
 }
 
 void Player::update(){
+	if(health <= 0){
+		health = -1337;
+		getApplication()->setState(GAME_OVER);
+		getApplication()->endGame();
+	}
+
 	static bool isSCooldown;
 
 	//Decrement the values for timed "things"
@@ -55,7 +61,7 @@ void Player::update(){
 	}
 	if(sprintCooldown > 0){
 		static bool cooldownTick;
-		if(cooldownTick){
+		if(cooldownTick || betterAmmoCooldown > 0){
 			sprintCooldown--;
 		}
 		cooldownTick = !cooldownTick;
@@ -102,6 +108,7 @@ void Player::update(){
 	MoveSprite(texture, x, y);
 	getApplication()->positionCamera((int)x - getApplication()->getScreenWidth() / 2, (int)y - getApplication()->getScreenHeight() / 2);
 	getApplication()->sprintCooldown = sprintCooldown;
+	getApplication()->playerHealth = health;
 }
 
 void Player::destroySprites(){

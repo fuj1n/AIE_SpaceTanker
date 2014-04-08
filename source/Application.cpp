@@ -88,6 +88,10 @@ int Application::run(){
     return quitStatus == -1 ? 0 : quitStatus;
 }
 
+void Application::setState(int state){
+	currentState = (States)state;
+}
+
 int Application::update(){
 	drawables.shrink_to_fit();
 	planets.shrink_to_fit();
@@ -95,6 +99,8 @@ int Application::update(){
 }
 
 void Application::draw(){
+	DrawIO::update();
+
 	switch(currentState){
 	case SPLASH:
 		positionCamera(0, 0);
@@ -116,13 +122,7 @@ void Application::draw(){
 		positionCamera(0, 0);
 		DrawString("Loading...", screenWidth / 2 - 30, screenHeight / 2 - 10);
 		break;
-	case PAUSE:
-		//Figure out a way to independently move the camera
-		DrawString("Paused", cameraX + screenWidth / 2 - 30, cameraY + screenHeight / 2 - 10);
-		if(!gameRendersThroughPause){
-			break;
-		}
-	case GAME:
+	case GAME:{ case PAUSE:
 		if(!planets.empty()){
 			for(unsigned int i = 0; i < planets.size(); i++){
 				IDrawable* d = planets.at(i);
@@ -136,20 +136,44 @@ void Application::draw(){
 		if(!drawables.empty()){
 			for(unsigned int i = 0; i < drawables.size(); i++){
 				IDrawable* d = drawables.at(i);
-			
+
 				DrawSprite(d->getTexture());
 			}
 		}
 
 		if(maxSprintCooldown > 0 && sprintCooldown > 0){
 			float percent = (float)sprintCooldown / (float)maxSprintCooldown;
-			//I don't trust drawLine, seems semi-broken
+			//I don't trust AIE DrawLine, seems semi-broken
 			DrawIO::drawLine(cameraX + 20.f, cameraY + screenHeight - 25.f, percent * (float)(screenWidth - 40), 20.f, 0.f, SColour(0xFFFF00FF));
+		}
+
+		int startCountdown = (int)roundf(this->startCountdown / (float)tickLimit);
+
+		if(startCountdown > 0){
+			char* cdownValue = new char[10];
+			_itoa_s(startCountdown, cdownValue, 10, 10);
+			//AIE DrawString coloring broken and not sizeable
+			DrawIO::drawString(cdownValue, (float)cameraX + screenWidth / 2 - 16, (float)cameraY + screenHeight / 2 - 16, 32.f, 32.f, 0.f, SColour(0x0000FFFF));
+		}
+
+		DrawIO::drawString(std::string("Health: ") + std::to_string(playerHealth), (float)cameraX + 26, (float)cameraY + screenHeight - 51, 32.f, 32.f, 0.f);
+		MoveSprite(getGameObjects()->healthRemainSprite, (float)cameraX + 15, (float)cameraY + screenHeight - 43);
+		DrawSprite(getGameObjects()->healthRemainSprite);
+
+		if(currentState == PAUSE){
+			DrawIO::drawString("Paused", (float)cameraX + screenWidth / 2.f - 96.f / 2.f, (float)cameraY + screenHeight / 2.f - 16.f, 32.f, 32.f, 0.f);
 		}
 
 		break;
 	}
+	case GAME_OVER:
+		positionCamera(0, 0);
+		DrawIO::drawString("Game Over", (float)screenWidth / 2 - (9 * 8), (float)screenHeight / 2 - 16, 32.f, 32.f, 0.f);
+		break;
+	}
 
+	//Since this is temporary anyway, no need to decrease my performance further by using a DrawIO function
+	//DrawIO::drawString(std::string("FPS: " + std::to_string(fps) + std::string(" TPS: ") + std::to_string(tps)), cameraX + 10, cameraY + 10, 32, 32, 0);
 	DrawString(std::string(std::string("FPS: ") + std::to_string(fps) + std::string(" TPS: ") + std::to_string(tps)).c_str(), cameraX + 10, cameraY + 10); 
 
 	MoveCamera((float)cameraX, (float)cameraY);
@@ -234,7 +258,14 @@ void Application::clearPlanets(){
 	planets.clear();
 }
 
+void Application::endGame(){
+	BASS_ChannelStop(gameObjects->backgroundLoop);
+	clearDrawables();
+	clearPlanets();
+}
+
 void Application::init(){
+	this->startCountdown = (int)(startCountdownMax * tickLimit);
 	gameObjects = new GameObjects();
 
 	//Call all the sprite initialisation here
@@ -298,6 +329,9 @@ void Application::preloadGame(){
 	getGameObjects()->healthPowerUpSprite = CreateSprite("./images/healthkit.png", 128, 128, false);
 	getGameObjects()->playerSprite = CreateSprite("./images/tanker.png", 64, 64, true);
 	getGameObjects()->enemySprite = CreateSprite("./images/enemy.png", 64, 64, true);
+	getGameObjects()->healthRemainSprite = DuplicateSprite(getGameObjects()->healthPowerUpSprite);
+	float w = 16.f, h = 16.f;
+	SetSpriteScale(getGameObjects()->healthRemainSprite, w, h);
 	
 	for(int i = 0; i < numExplosions; i++){
 		getGameObjects()->explosionSprites[i] = CreateSprite((std::string("./images/explosion/") + std::to_string(i) + std::string(".png")).c_str(), 128, 128, true);
@@ -327,7 +361,6 @@ void Application::initGame(){
 }
 
 int Application::updateGame(){
-	DrawIO::update();
 	static int quitTickDown;
 	if(IsKeyDown(KEY_ESC)){
 		if(quitTickDown >= (2 * 60)){
@@ -376,6 +409,9 @@ int Application::updateGame(){
 	case LOADING:
 		preloadGame();
 	case GAME:{
+		if(startCountdown > 0){
+			startCountdown--;
+		}
 		int enemyCount = 0;
 			//applyDifficulty();
 			if(powerUpSpawn <= 0){

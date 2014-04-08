@@ -20,6 +20,7 @@ static const char* GAME_NAME = "Space Tanker";
 static const char* VERSION = "v0.4";
 static const int WORLD_WIDTH = 960, WORLD_HEIGHT = 960;
 static const bool gameRendersThroughPause = true;
+static const float startCountdownMax = 5.f;
 
 namespace{
 	enum States{
@@ -29,6 +30,7 @@ namespace{
 		LOADING,
 		GAME,
 		PAUSE,
+		GAME_OVER,
 		HSCORES
 	}; States currentState = SPLASH;
 }
@@ -73,13 +75,20 @@ public:
 	int getScreenHeight();
 	ITrackable* getTrackTarget();
 
-	//Drawing variables(purposely public)
+	void setState(int state);
+
+	void endGame();
+
+	//GUI variables(purposely public)
 	int sprintCooldown;
 	int maxSprintCooldown;
+	int playerHealth;
 
 private:
 	int powerUpSpawn, healthUpSpawn, powerUpFrequency, healthUpFrequency, gameTicks;
 	float proceduralDifficulty;
+	
+	int startCountdown;
 
 	void init();
 	void generatePlanets();

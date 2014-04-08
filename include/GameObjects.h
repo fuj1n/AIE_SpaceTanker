@@ -31,6 +31,8 @@ public:
 	SPRITE healthPowerUpSprite;
 	SPRITE playerSprite;
 
+	SPRITE healthRemainSprite;
+
 	SPRITE enemySprite;
 
 	SPRITE explosionSprites[numExplosions];
