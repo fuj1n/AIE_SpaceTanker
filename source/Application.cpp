@@ -63,7 +63,7 @@ int Application::run(){
 			delta -= 1;
 			shouldRender = true;
 		}
-		Sleep(2);
+		Sleep(1);
 		if(shouldRender){
 			framerate++;
 			draw();
@@ -90,6 +90,14 @@ int Application::run(){
 
 void Application::setState(int state){
 	currentState = (States)state;
+}
+
+unsigned long long Application::getScore(){
+	return score;
+}
+
+void Application::setScore(unsigned long long score){
+	this->score = score;
 }
 
 int Application::update(){
@@ -262,10 +270,20 @@ void Application::endGame(){
 	BASS_ChannelStop(gameObjects->backgroundLoop);
 	clearDrawables();
 	clearPlanets();
+
+	if(scoreTable->isHighScore(score)){
+		//Open the high score name enter state
+	}else{
+		//Open the game over high score display state
+	}
 }
 
 void Application::init(){
+	this->score = 0;
 	this->startCountdown = (int)(startCountdownMax * tickLimit);
+	this->scoreTable = new ScoreTable();
+	scoreTable->load();
+
 	gameObjects = new GameObjects();
 
 	//Call all the sprite initialisation here

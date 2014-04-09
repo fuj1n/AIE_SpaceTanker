@@ -2,6 +2,8 @@
 #include "AIE.h"
 #include "GameObjects.h"
 #include "bass.h"
+#include "WorldData.h"
+#include "ScoreTable.h"
 #include <cctype>
 #include <windows.h>
 #include <vector>
@@ -18,7 +20,6 @@
 
 static const char* GAME_NAME = "Space Tanker";
 static const char* VERSION = "v0.4";
-static const int WORLD_WIDTH = 960, WORLD_HEIGHT = 960;
 static const bool gameRendersThroughPause = true;
 static const float startCountdownMax = 5.f;
 
@@ -44,6 +45,10 @@ private:
 	int fps, tps;
 
 	int cameraX, cameraY;
+
+	unsigned long long score;
+
+	ScoreTable* scoreTable;
 
 	ITrackable* aiTrackTarget;
 
@@ -76,6 +81,9 @@ public:
 	ITrackable* getTrackTarget();
 
 	void setState(int state);
+
+	unsigned long long getScore();
+	void setScore(unsigned long long score);
 
 	void endGame();
 

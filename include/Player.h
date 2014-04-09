@@ -30,4 +30,5 @@ public:
 	void onCollide(ICollidable* col);
 	void onTesterMessage(ICollidable* col);
 	std::string getColliderName();
+	void onAction(int act);
 };

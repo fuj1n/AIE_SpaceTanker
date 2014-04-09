@@ -4,7 +4,8 @@
 #pragma once
 
 class IParent{
-
+public:
+	virtual void onAction(int act){}
 };
 
 class IDrawable : public IParent{

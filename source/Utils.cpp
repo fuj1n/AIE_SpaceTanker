@@ -1,10 +1,11 @@
 #include "AIE.h"
-#include "Application.h"
 #include "CharSpriteUtils.cpp"
+#include "WorldData.h"
 #include <random>
 #include <vector>
 #include <string>
 #include <fstream>
+#include <ostream>
 #include <initializer_list>
 #include <type_traits>
 
@@ -79,6 +80,13 @@ namespace{
 			}
 		}
 
+		void clear(){
+			keys->clear();
+			values->clear();
+			keys->shrink_to_fit();
+			values->shrink_to_fit();
+		}
+
 		unsigned int size(){
 			if(keys->size() != values->size()){
 				std::cout << "Fatal Error! Map desync.";
@@ -94,6 +102,46 @@ namespace{
 
 		std::vector<valueType>* getValues(){
 			return values;
+		}
+
+		bool isEmpty(){
+			return keys->empty();
+		}
+
+		bool containsKey(keyType key){
+			if(keys->size() != values->size()){
+				std::cout << "Fatal Error! Map desync.";
+				throw(42);
+			}
+
+			for(unsigned int i = 0; i < keys->size(); i++){
+				if(keys->at(i) == key){
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		bool containsValue(valueType value){
+			if(keys->size() != values->size()){
+				std::cout << "Fatal Error! Map desync.";
+				throw(42);
+			}
+
+			for(unsigned int i = 0; i < keys->size(); i++){
+				if(values ->at(i) == value){
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		void print(std::ostream& stream){
+			for(unsigned int i = 0; i < this->size(); i++){
+				stream << getKeys()->at(i) << " : " << getValues()->at(i) << std::endl;
+			}
 		}
 	};
 

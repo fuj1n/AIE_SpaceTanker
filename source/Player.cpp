@@ -43,7 +43,6 @@ unsigned int Player::getTY(){
 void Player::update(){
 	if(health <= 0){
 		health = -1337;
-		getApplication()->setState(GAME_OVER);
 		getApplication()->endGame();
 	}
 
@@ -154,6 +153,15 @@ void Player::onCollide(ICollidable* col){
 }
 
 void Player::onTesterMessage(ICollidable* col){}
+
+void Player::onAction(int act){
+	switch(act){
+	case 0:
+		unsigned long long score = getApplication()->getScore();
+		getApplication()->setScore(score + 15);
+		break;
+	}
+}
 
 std::string Player::getColliderName(){
 	return "player";

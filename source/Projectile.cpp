@@ -78,6 +78,10 @@ void Projectile::onTesterMessage(ICollidable* col){
 	if(!isSpecial){
 		timeUntilDeath = 0;
 	}
+	
+	if(col->getColliderName() == "enemy"){
+		parent->onAction(0);
+	}
 }
 
 std::string Projectile::getColliderName(){
