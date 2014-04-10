@@ -30,12 +30,47 @@ Application::~Application(){
 }
 
 int Application::run(){
+	//ScoreTable tbl = ScoreTable();
+	////Score table write test
+	//tbl.putScore("abc", 52000);
+	//tbl.putScore("cba", 32000);
+	//tbl.putScore("wtf", 15000);
+	//tbl.putScore("tra", 88531);
+	//tbl.putScore("fuj", 49284);
+	//tbl.putScore("jar", 59482);
+	//tbl.putScore("wet", 82182);
+	//tbl.putScore("wtf", 52000);
+	//tbl.putScore("jnx", 100000);
+	//tbl.putScore("dxd", 482);
+	//tbl.putScore("aux", 20000);
+	//tbl.save();
+
+	////Score table read test
+	//tbl.load();
+	//tbl.scoreMap->print(std::cout);
+
+	//system("pause");
+	//return 0;
 	srand(timeGetTime());
 
 	Initialise(screenWidth, screenHeight, isFullscreen, (std::string("Space Tanker ") + std::string(VERSION)).c_str());
 
+	//A little hackery to move the window
+	int displayWidth, displayHeight;
+	int wndWidth, wndHeight;
+	WindowUtils::getScreenSize(displayWidth, displayHeight);
+
+	windowHandle = GetActiveWindow();
+	WindowUtils::getWindowSize(windowHandle, wndWidth, wndHeight);
+
+	MoveWindow(windowHandle, displayWidth / 2 - wndWidth / 2, displayHeight / 2 - wndHeight / 2, wndWidth, wndHeight, true);
+	
+	HICON winICO = (HICON)LoadImage(NULL, "images/tanker.png", IMAGE_ICON, 32, 32, LR_LOADFROMFILE);
+	SendMessage(windowHandle, WM_SETICON, ICON_SMALL, (LPARAM)winICO);
+	SendMessage(windowHandle, WM_SETICON, ICON_BIG, (LPARAM)winICO);
+
 	//BASS init stuffs
-	BASS_Init(-1, 44100, 0, 0, 0); 
+	BASS_Init(-1, 44100, 0, windowHandle, 0); 
 
 	SetBackgroundColour(SColour(0x000));
 
@@ -79,6 +114,7 @@ int Application::run(){
 			framerate = 0;
 			tickrate = 0;
 		}
+
     } while ( quitStatus == -1 && FrameworkUpdate() == false );
 
 	BASS_Free();

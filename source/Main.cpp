@@ -4,13 +4,14 @@
 #include <string>
 
 int main(int argc, char* argv[]){
+	processHandle = OpenProcess(PROCESS_ALL_ACCESS, TRUE, GetCurrentProcessId());
+	SetPriorityClass(processHandle, REALTIME_PRIORITY_CLASS);
+
 	int displayWidth = 640, displayHeight = 480;
 	bool displayFScreen = false;
 
 	for(unsigned int i = 1; i < argc; i++){
 		std::string arg = std::string(argv[i]);
-		
-		std::cout << arg << std::endl;
 
 		if(i + 1 < argc){
 			if(arg == "-dispWidth"){

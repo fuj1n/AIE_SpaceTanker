@@ -22,6 +22,9 @@ static const char* GAME_NAME = "Space Tanker";
 static const char* VERSION = "v0.4";
 static const bool gameRendersThroughPause = true;
 static const float startCountdownMax = 5.f;
+static HANDLE processHandle;
+//static HANDLE threadHandle;
+static HWND windowHandle;
 
 namespace{
 	enum States{

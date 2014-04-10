@@ -6,8 +6,8 @@
 #include <string>
 #include <fstream>
 #include <ostream>
-#include <initializer_list>
 #include <type_traits>
+#include <bitset>
 
 #pragma once
 
@@ -143,7 +143,41 @@ namespace{
 				stream << getKeys()->at(i) << " : " << getValues()->at(i) << std::endl;
 			}
 		}
+
+		SimplifiedHashmap<keyType, valueType>* clone(){
+			SimplifiedHashmap<keyType, valueType>* temp = new SimplifiedHashmap<keyType, valueType>();
+
+			if(!isEmpty()){
+				for(unsigned int i = 0; i < size(); i++){
+					temp->put(keys->at(i), values->at(i));
+				}
+			}
+
+			return temp;
+		}
 	};
+
+	namespace WindowUtils{
+		void getScreenSize(int &width, int &height){
+			RECT desktop;
+
+			const HWND hDesktop = GetDesktopWindow();
+
+			GetWindowRect(hDesktop, &desktop);
+
+			width = desktop.right;
+			height = desktop.bottom;
+		}
+
+		void getWindowSize(HWND handle, int &width, int &height){
+			RECT window;
+
+			GetWindowRect(handle, &window);
+
+			width = window.right;
+			height = window.bottom;
+		}
+	}
 
 	namespace GameUtils{
 
@@ -436,7 +470,7 @@ namespace{
 				int lineCounter = 1;
 				while(!br.eof()){
 					std::string inBuffer;
-					br >> inBuffer;
+					std::getline(br, inBuffer);
 
 					if(inBuffer.find(':', 0) == std::string::npos){
 						std::cout << "Syntax error on line " << lineCounter << " in file " << file << "." << std::endl;
@@ -457,6 +491,29 @@ namespace{
 			}else{
 				std::cout << "Error, access to file " << file << " is denied or the file doesn't exist" << std::endl;
 			}
+		}
+	}
+
+	namespace Crypt{
+		std::string encryptDecrypt(const char* key, std::string crypt){
+			std::string output = crypt;
+
+			for(unsigned int i = 0; i < crypt.size(); i++)
+				output[i] = crypt[i] ^ key[i % (sizeof(key) / sizeof(char))];
+
+			return output;
+		}
+
+		template<class keyType, class valueType>
+		SimplifiedHashmap<keyType, valueType>* encryptDecryptMap(const char* key, SimplifiedHashmap<keyType, valueType>* source){
+			SimplifiedHashmap<keyType, valueType>* temp = source->clone();
+
+			for(unsigned int i = 0; i < temp->size(); i++){
+				temp->getKeys()->at(i) = encryptDecrypt(key, temp->getKeys()->at(i));
+				temp->getValues()->at(i) = encryptDecrypt(key, temp->getValues()->at(i));
+			}
+
+			return temp;
 		}
 	}
 }

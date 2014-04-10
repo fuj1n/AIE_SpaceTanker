@@ -1,4 +1,7 @@
 #include "ScoreTable.h"
+#include <direct.h>
+
+static const char* KEY = "NOT_REVEALED";
 
 ScoreTable::ScoreTable(){
 	scoreMap = new SimplifiedHashmap<std::string, std::string>();
@@ -6,12 +9,17 @@ ScoreTable::ScoreTable(){
 
 void ScoreTable::load(){
 	scoreMap->clear();
-	FileIO::read("./data/scores.data", scoreMap);
+	FileIO::read("data/scores.data", scoreMap);
+	scoreMap = Crypt::encryptDecryptMap<std::string, std::string>(KEY, scoreMap);
 }
 
 void ScoreTable::save(){
 	if(!scoreMap->isEmpty()){
-		FileIO::write("./data/scores.data", scoreMap);
+		_mkdir("data");
+
+		SimplifiedHashmap<std::string, std::string>* cryptMap = Crypt::encryptDecryptMap<std::string, std::string>(KEY, scoreMap);
+
+		FileIO::write("data/scores.data", cryptMap);
 		load();
 		sort();
 	}
