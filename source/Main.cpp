@@ -3,25 +3,25 @@
 #include "Application.h"
 #include <string>
 
-int main(int argc, char* argv[]){
+int main(int argc, char* argv[]) {
 	processHandle = OpenProcess(PROCESS_ALL_ACCESS, TRUE, GetCurrentProcessId());
 	SetPriorityClass(processHandle, REALTIME_PRIORITY_CLASS);
 
 	int displayWidth = 640, displayHeight = 480;
 	bool displayFScreen = false;
 
-	for(unsigned int i = 1; i < argc; i++){
+	for(int i = 1; i < argc; i++) {
 		std::string arg = std::string(argv[i]);
 
-		if(i + 1 < argc){
-			if(arg == "-dispWidth"){
+		if(i + 1 < argc) {
+			if(arg == "-dispWidth") {
 				displayWidth = atoi(argv[i + 1]);
-			}else if(arg == "-dispHeight"){
+			} else if(arg == "-dispHeight") {
 				displayHeight = atoi(argv[i + 1]);
 			}
 		}
 
-		if(arg == "-fscreen"){
+		if(arg == "-fscreen") {
 			displayFScreen = true;
 		}
 	}

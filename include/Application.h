@@ -26,20 +26,53 @@ static HANDLE processHandle;
 //static HANDLE threadHandle;
 static HWND windowHandle;
 
-namespace{
-	enum States{
+namespace {
+	enum States {
 		SPLASH,
 		MAIN_MENU,
+		TRACKPICK,
 		TUTORIAL,
 		LOADING,
 		GAME,
+		UPGRADE,
 		PAUSE,
 		GAME_OVER,
 		HSCORES
 	}; States currentState = SPLASH;
 }
 
-class Application{
+class PlayerUpgrades {
+public:
+	int availableCoins;
+
+	//Upgrade values
+	int speed, maxHealth, bulletSpeed, damageResistance, maxRange, fireRate, sprintDuration, sprintCooldownSpeed;
+	int speedPrice, healthPrice, bspeedPrice, damResPrice, maxRangePrice, fireRatePrice, sprintDurPrice, sprintCdnPrice;
+
+	PlayerUpgrades() {
+		availableCoins = 0;
+
+		speed = 1;
+		maxHealth = 1;
+		bulletSpeed = 1;
+		damageResistance = 1;
+		maxRange = 1;
+		sprintDuration = 1;
+		sprintCooldownSpeed = 1;
+		fireRate = 1;
+
+		speedPrice = 15;
+		healthPrice = 30;
+		bspeedPrice = 20;
+		damResPrice = 50;
+		maxRangePrice = 20;
+		fireRatePrice = 100;
+		sprintDurPrice = 75;
+		sprintCdnPrice = 80;
+	}
+};
+
+class Application {
 private:
 	int screenWidth, screenHeight;
 	double tickLimit;
@@ -54,14 +87,18 @@ private:
 	ScoreTable* scoreTable;
 
 	ITrackable* aiTrackTarget;
+	PlayerUpgrades* playerUpgrades;
 
 	GameObjects* gameObjects;
 
 	std::vector<IDrawable*> planets;
 	std::vector<IDrawable*> drawables;
 
+	bool altTrack;
+
 	int update();
 	void draw();
+	void drawUpgradeStats(int index, float x, float y);
 public:
 	static Application* instance;
 
@@ -96,9 +133,9 @@ public:
 	int playerHealth;
 
 private:
-	int powerUpSpawn, healthUpSpawn, powerUpFrequency, healthUpFrequency, gameTicks;
+	int healthUpSpawn, healthUpFrequency, gameTicks;
 	float proceduralDifficulty;
-	
+
 	int startCountdown;
 
 	void init();

@@ -1,5 +1,5 @@
 #include "BaseClass.h"
 
-Application* BaseClass::getApplication(){
+Application* BaseClass::getApplication() {
 	return Application::instance;
 }

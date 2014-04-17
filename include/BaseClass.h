@@ -2,7 +2,7 @@
 
 #pragma once
 
-class BaseClass{
+class BaseClass {
 public:
 	Application* getApplication();
 };

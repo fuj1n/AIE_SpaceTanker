@@ -5,7 +5,7 @@
 
 #pragma once
 
-class Planet : public IDrawable, BaseClass{
+class Planet : public IDrawable, BaseClass {
 private:
 	SPRITE texture;
 public:

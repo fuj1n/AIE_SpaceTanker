@@ -1,6 +1,6 @@
 #include "Utils.cpp"
 
-class ScoreTable{
+class ScoreTable {
 private:
 public:
 	//Warning: not fool proof

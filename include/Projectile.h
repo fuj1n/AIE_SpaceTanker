@@ -5,7 +5,7 @@
 
 #pragma once
 
-class Projectile : public ICollidable, BaseClass{
+class Projectile : public ICollidable, BaseClass {
 private:
 	float width, height;
 	int xDir, yDir, timeUntilDeath;

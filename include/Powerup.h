@@ -5,7 +5,7 @@
 
 #pragma once
 
-class Powerup : public ICollidable, BaseClass{
+class Powerup : public ICollidable, BaseClass {
 private:
 	float width, height;
 	char* powerupType;

@@ -6,7 +6,7 @@
 
 #pragma once
 
-class Player : public ITrackable, public ICollidable, BaseClass{
+class Player : public ITrackable, public ICollidable, BaseClass {
 private:
 	int width, height;
 	float x, y, rotation, currentRotation, speed, scale;
@@ -15,6 +15,8 @@ private:
 	int shootCooldown, betterAmmoCooldown, sprintCooldown, maxSprintTime;
 
 	SPRITE texture;
+
+	PlayerUpgrades* upgrades = new PlayerUpgrades();
 public:
 	Player(SPRITE sprite);
 	SPRITE getTexture();
@@ -31,4 +33,5 @@ public:
 	void onTesterMessage(ICollidable* col);
 	std::string getColliderName();
 	void onAction(int act);
+	PlayerUpgrades* getUpgrades();
 };

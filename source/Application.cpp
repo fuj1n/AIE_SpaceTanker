@@ -8,7 +8,7 @@
 
 Application* Application::instance;
 
-Application::Application(int screenWidth, int screenHeight, bool isFullscreen){
+Application::Application(int screenWidth, int screenHeight, bool isFullscreen) {
 	instance = this;
 	this->screenWidth = screenWidth;
 	this->screenHeight = screenHeight;
@@ -20,7 +20,7 @@ Application::Application(int screenWidth, int screenHeight, bool isFullscreen){
 	this->tps = 0;
 }
 
-Application::~Application(){
+Application::~Application() {
 	delete &screenWidth;
 	delete &screenHeight;
 	delete &isFullscreen;
@@ -29,7 +29,7 @@ Application::~Application(){
 	clearPlanets();
 }
 
-int Application::run(){
+int Application::run() {
 	//ScoreTable tbl = ScoreTable();
 	////Score table write test
 	//tbl.putScore("abc", 52000);
@@ -64,13 +64,13 @@ int Application::run(){
 	WindowUtils::getWindowSize(windowHandle, wndWidth, wndHeight);
 
 	MoveWindow(windowHandle, displayWidth / 2 - wndWidth / 2, displayHeight / 2 - wndHeight / 2, wndWidth, wndHeight, true);
-	
-	HICON winICO = (HICON)LoadImage(NULL, "images/tanker.png", IMAGE_ICON, 32, 32, LR_LOADFROMFILE);
+
+	HICON winICO = (HICON)LoadImage(NULL, ".images/tanker.png", IMAGE_ICON, 64, 64, LR_LOADFROMFILE);
 	SendMessage(windowHandle, WM_SETICON, ICON_SMALL, (LPARAM)winICO);
 	SendMessage(windowHandle, WM_SETICON, ICON_BIG, (LPARAM)winICO);
 
 	//BASS init stuffs
-	BASS_Init(-1, 44100, 0, windowHandle, 0); 
+	BASS_Init(-1, 44100, 0, windowHandle, 0);
 
 	SetBackgroundColour(SColour(0x000));
 
@@ -86,25 +86,31 @@ int Application::run(){
 
 	int framerate = 0, tickrate = 0;
 
-    do 
-    {
+	HCURSOR gameCursor = LoadCursorFromFile("./images/GameCursor.cur");
+	SPRITE sGameCursor = CreateSprite("./images/GameCursor.png", 32, 32, false);
+
+	do {
+		if(!isFullscreen) {
+			SetCursor(gameCursor);
+		}
+
 		long now = timeGetTime();
 		delta += (now - lastTime) / msPerTick;
 		lastTime = now;
 		boolean shouldRender = true;
-		while(delta >= 1){
+		while(delta >= 1) {
 			tickrate += 1;
 			quitStatus = update();
 			delta -= 1;
 			shouldRender = true;
 		}
 		Sleep(1);
-		if(shouldRender){
+		if(shouldRender) {
 			framerate++;
 			draw();
 		}
 
-		if(timeGetTime() - lastTimer >= 1000){
+		if(timeGetTime() - lastTimer >= 1000) {
 			std::cout << "FPS: " << framerate << " TPS: " << tickrate << std::endl;
 
 			fps = framerate;
@@ -115,37 +121,55 @@ int Application::run(){
 			tickrate = 0;
 		}
 
-    } while ( quitStatus == -1 && FrameworkUpdate() == false );
+		if(isFullscreen) {
+			int mousePosX, mousePosY;
+			GetMouseLocation(mousePosX, mousePosY);
+
+			if(mousePosX > screenWidth) {
+				mousePosX = screenWidth;
+			} else if(mousePosX < 0) {
+				mousePosX = 0;
+			}
+
+			if(mousePosY > screenHeight) {
+				mousePosY = screenHeight;
+			} else if(mousePosY < 0) {
+				mousePosY = 0;
+			}
+
+			MoveSprite(sGameCursor, (float)cameraX + mousePosX, (float)cameraY + mousePosY);
+			DrawSprite(sGameCursor);
+		}
+	} while(quitStatus == -1 && FrameworkUpdate() == false);
 
 	BASS_Free();
-
 	Shutdown();
 
-    return quitStatus == -1 ? 0 : quitStatus;
+	return quitStatus == -1 ? 0 : quitStatus;
 }
 
-void Application::setState(int state){
+void Application::setState(int state) {
 	currentState = (States)state;
 }
 
-unsigned long long Application::getScore(){
+unsigned long long Application::getScore() {
 	return score;
 }
 
-void Application::setScore(unsigned long long score){
+void Application::setScore(unsigned long long score) {
 	this->score = score;
 }
 
-int Application::update(){
+int Application::update() {
 	drawables.shrink_to_fit();
 	planets.shrink_to_fit();
 	return updateGame();
 }
 
-void Application::draw(){
+void Application::draw() {
 	DrawIO::update();
 
-	switch(currentState){
+	switch(currentState) {
 	case SPLASH:
 		positionCamera(0, 0);
 		DrawSprite(gameObjects->splashTexture);
@@ -157,6 +181,14 @@ void Application::draw(){
 		DrawSprite(gameObjects->menuButtons[2]);
 		DrawSprite(gameObjects->logoTexture);
 		break;
+	case TRACKPICK:
+		positionCamera(0, 0);
+		DrawIO::fillRect(screenWidth / 2 - 350.f / 2, screenHeight / 2 - 60.f / 2 - 60 / 2 - 20, 350.f, 60.f, 0.f, SColour(0xFFFFFFFF));
+		DrawIO::fillRect(screenWidth / 2 - 350.f / 2, screenHeight / 2 - 60.f / 2 + 20, 350.f, 60.f, 0.f, SColour(0xFFFFFFFF));
+		DrawIO::drawString("Select ambient music track: ", screenWidth / 2 - (32.f * 27) / 4, 60.f, 32.f, 32.f, 0.f);
+		DrawIO::drawString("Original 8-bit", screenWidth / 2 - 350.f / 2 + (350.f / 2 - 32.f * 15.f / 4), screenHeight / 2 - 60.f / 2 - 60 / 2 - 20 + (32.f / 4), 32.f, 32.f, 0.f);
+		DrawIO::drawString("Nitro Fun - New Game", screenWidth / 2 - 350.f / 2 + (350.f / 2 - 32.f * 21.f / 4), screenHeight / 2 - 60.f / 2 + 20 + (32.f / 4), 32.f, 32.f, 0.f);
+		break;
 	case TUTORIAL:
 		positionCamera(0, 0);
 		DrawSprite(gameObjects->instructionTexture);
@@ -166,9 +198,9 @@ void Application::draw(){
 		positionCamera(0, 0);
 		DrawString("Loading...", screenWidth / 2 - 30, screenHeight / 2 - 10);
 		break;
-	case GAME:{ case PAUSE:
-		if(!planets.empty()){
-			for(unsigned int i = 0; i < planets.size(); i++){
+	case GAME:{ case UPGRADE: case PAUSE:
+		if(!planets.empty()) {
+			for(unsigned int i = 0; i < planets.size(); i++) {
 				IDrawable* d = planets.at(i);
 
 				DrawSprite(d->getTexture());
@@ -177,15 +209,15 @@ void Application::draw(){
 
 		DrawSprite(gameObjects->stars);
 
-		if(!drawables.empty()){
-			for(unsigned int i = 0; i < drawables.size(); i++){
+		if(!drawables.empty()) {
+			for(unsigned int i = 0; i < drawables.size(); i++) {
 				IDrawable* d = drawables.at(i);
 
 				DrawSprite(d->getTexture());
 			}
 		}
 
-		if(maxSprintCooldown > 0 && sprintCooldown > 0){
+		if(maxSprintCooldown > 0 && sprintCooldown > 0) {
 			float percent = (float)sprintCooldown / (float)maxSprintCooldown;
 			//I don't trust AIE DrawLine, seems semi-broken
 			DrawIO::drawLine(cameraX + 20.f, cameraY + screenHeight - 25.f, percent * (float)(screenWidth - 40), 20.f, 0.f, SColour(0xFFFF00FF));
@@ -193,19 +225,47 @@ void Application::draw(){
 
 		int startCountdown = (int)roundf(this->startCountdown / (float)tickLimit);
 
-		if(startCountdown > 0){
-			char* cdownValue = new char[10];
-			_itoa_s(startCountdown, cdownValue, 10, 10);
-			//AIE DrawString coloring broken and not sizeable
-			DrawIO::drawString(cdownValue, (float)cameraX + screenWidth / 2 - 16, (float)cameraY + screenHeight / 2 - 16, 32.f, 32.f, 0.f, SColour(0x0000FFFF));
-		}
+		if(currentState == GAME) {
+			if(startCountdown > 0) {
+				char* cdownValue = new char[10];
+				_itoa_s(startCountdown, cdownValue, 10, 10);
+				//AIE DrawString coloring broken and not sizeable
+				DrawIO::drawString(cdownValue, (float)cameraX + screenWidth / 2 - 16, (float)cameraY + screenHeight / 2 - 16, 32.f, 32.f, 0.f, SColour(0x0000FFFF));
+			}
 
-		DrawIO::drawString(std::string("Health: ") + std::to_string(playerHealth), (float)cameraX + 26, (float)cameraY + screenHeight - 51, 32.f, 32.f, 0.f);
-		MoveSprite(getGameObjects()->healthRemainSprite, (float)cameraX + 15, (float)cameraY + screenHeight - 43);
-		DrawSprite(getGameObjects()->healthRemainSprite);
+			DrawIO::drawString(std::string("Health: ") + std::to_string(playerHealth), (float)cameraX + 26, (float)cameraY + screenHeight - 51, 32.f, 32.f, 0.f);
+			MoveSprite(getGameObjects()->healthRemainSprite, (float)cameraX + 15, (float)cameraY + screenHeight - 43);
+			DrawSprite(getGameObjects()->healthRemainSprite);
 
-		if(currentState == PAUSE){
+			DrawIO::drawString(std::string("Coins: ") + std::to_string(playerUpgrades->availableCoins), (float)cameraX + 226, (float)cameraY + screenHeight - 51, 32.f, 32.f, 0.f);
+			MoveSprite(getGameObjects()->coinsOwnedSprite, (float)cameraX + 215, (float)cameraY + screenHeight - 43);
+			DrawSprite(getGameObjects()->coinsOwnedSprite);
+		} else if(currentState == PAUSE) {
+			DrawIO::fillRect(cameraX + 0.f, cameraY + 0.f, (float)screenWidth, (float)screenHeight, 0.f, SColour(0x00000088));
 			DrawIO::drawString("Paused", (float)cameraX + screenWidth / 2.f - 96.f / 2.f, (float)cameraY + screenHeight / 2.f - 16.f, 32.f, 32.f, 0.f);
+		} else if(currentState == UPGRADE) {
+			//The framerate on this screen will be dramatically lower because I am using cheaty functions because of the lack of them in the framework
+			DrawIO::fillRect(cameraX + 0.f, cameraY + 0.f, (float)screenWidth, (float)screenHeight, 0.f, SColour(0x00000088));
+
+			DrawIO::drawString(std::string("Coins: ") + std::to_string(playerUpgrades->availableCoins), (float)cameraX + 26, (float)cameraY + screenHeight - 51, 32.f, 32.f, 0.f);
+			MoveSprite(getGameObjects()->coinsOwnedSprite, (float)cameraX + 15, (float)cameraY + screenHeight - 43);
+			DrawSprite(getGameObjects()->coinsOwnedSprite);
+
+			MoveSprite(gameObjects->guiFrameSprite, cameraX + screenWidth / 2 - 480.f / 2, cameraY + screenHeight / 2 - 360.f / 2);
+			DrawSprite(gameObjects->guiFrameSprite);
+			DrawIO::drawString("Tanker Customisation", cameraX + screenWidth / 2 - 8.f * 20, cameraY + screenHeight / 2 - 16.f - (360 / 3 + 30), 32.f, 32.f, 0.f);
+
+			int upgradeIndex = 0;
+			float plY = cameraY + screenHeight / 2 - 16.f - (360 / 3 + 30) + 35;
+			for(int i = 1; i <= 4; i++) {
+				float plX = cameraX + screenWidth / 2 - 480.f / 2 + 16;
+				for(int j = 1; j <= 2; j++) {
+					drawUpgradeStats(upgradeIndex, plX, plY);
+					plX += 216 + 15;
+					upgradeIndex++;
+				}
+				plY += 64 + 10;
+			}
 		}
 
 		break;
@@ -218,46 +278,127 @@ void Application::draw(){
 
 	//Since this is temporary anyway, no need to decrease my performance further by using a DrawIO function
 	//DrawIO::drawString(std::string("FPS: " + std::to_string(fps) + std::string(" TPS: ") + std::to_string(tps)), cameraX + 10, cameraY + 10, 32, 32, 0);
-	DrawString(std::string(std::string("FPS: ") + std::to_string(fps) + std::string(" TPS: ") + std::to_string(tps)).c_str(), cameraX + 10, cameraY + 10); 
+	DrawString(std::string(std::string("FPS: ") + std::to_string(fps) + std::string(" TPS: ") + std::to_string(tps)).c_str(), cameraX + 10, cameraY + 10);
 
 	MoveCamera((float)cameraX, (float)cameraY);
 
 	ClearScreen();
 }
 
-void Application::positionCamera(int x, int y){
+void Application::drawUpgradeStats(int index, float x, float y) {
+	std::string upgradeName;
+	int upgradeLevel;
+	SPRITE upgradeIcon;
+	int upgradePrice;
+
+	switch(index) {
+	case 0:
+		upgradeName = "Tanker Speed";
+		upgradeLevel = playerUpgrades->speed;
+		upgradeIcon = getGameObjects()->playerUpgrades.speed;
+		upgradePrice = playerUpgrades->speedPrice;
+		break;
+	case 1:
+		upgradeName = "Max Health";
+		upgradeLevel = playerUpgrades->maxHealth;
+		upgradeIcon = getGameObjects()->playerUpgrades.maxHealth;
+		upgradePrice = playerUpgrades->healthPrice;
+		break;
+	case 2:
+		upgradeName = "Bullet Speed";
+		upgradeLevel = playerUpgrades->bulletSpeed;
+		upgradeIcon = getGameObjects()->playerUpgrades.bulletSpeed;
+		upgradePrice = playerUpgrades->bspeedPrice;
+		break;
+	case 3:
+		upgradeName = "Damage Resistance";
+		upgradeLevel = playerUpgrades->damageResistance;
+		upgradeIcon = getGameObjects()->playerUpgrades.damageResistance;
+		upgradePrice = playerUpgrades->damResPrice;
+		break;
+	case 4:
+		upgradeName = "Fire Range";
+		upgradeLevel = playerUpgrades->maxRange;
+		upgradeIcon = getGameObjects()->playerUpgrades.maxRange;
+		upgradePrice = playerUpgrades->maxRangePrice;
+		break;
+	case 5:
+		upgradeName = "Fire Rate";
+		upgradeLevel = playerUpgrades->fireRate;
+		upgradeIcon = getGameObjects()->playerUpgrades.fireRate;
+		upgradePrice = playerUpgrades->fireRatePrice;
+		break;
+	case 6:
+		upgradeName = "Sprint Duration";
+		upgradeLevel = playerUpgrades->sprintDuration;
+		upgradeIcon = getGameObjects()->playerUpgrades.sprintDuration;
+		upgradePrice = playerUpgrades->sprintDurPrice;
+		break;
+	case 7:
+		upgradeName = "Sprint Cooldown Speed";
+		upgradeLevel = playerUpgrades->sprintCooldownSpeed;
+		upgradeIcon = getGameObjects()->playerUpgrades.sprintCooldownSpeed;
+		upgradePrice = playerUpgrades->sprintCdnPrice;
+		break;
+	}
+
+	SColour col = upgradeLevel == 5 ? SColour(0x00FF00FF) : SColour(0xFFFFFFFF);
+
+	upgradePrice *= upgradeLevel;
+
+	DrawIO::drawRect(x, y, 216.f, 64.f, 0.f, 1.f, col);
+
+	DrawIO::drawString(upgradeName, x + 2, y + 2, 16.f, 16.f, 0.f, col);
+	MoveSprite(upgradeIcon, x + 216.f - 18.f, y + 2);
+	SetSpriteColour(upgradeIcon, col);
+	DrawSprite(upgradeIcon);
+
+	DrawIO::drawString(upgradeLevel == 5 ? std::string("Fully upgraded.") : std::string("Price: ") + std::to_string(upgradePrice), x + 2, y + 20, 16.f, 16.f, 0.f, upgradeLevel == 5 ? col : playerUpgrades->availableCoins >= upgradePrice && upgradePrice != -1 ? col : SColour(0x0000FFFF));
+
+	float spX = x + 8;
+	for(int i = 1; i <= 5; i++) {
+		if(upgradeLevel >= i) {
+			DrawIO::fillRect(spX, y + 38.f, 16.f, 16.f, 0.f, col);
+		} else {
+			DrawIO::drawRect(spX, y + 38.f, 16.f, 16.f, 0.f, 1.f, col);
+		}
+		spX += 18.f;
+	}
+}
+
+void Application::positionCamera(int x, int y) {
 	cameraX = x;
 	cameraY = y;
 }
 
-double Application::getTickLimit(){
+double Application::getTickLimit() {
 	return tickLimit;
 }
 
-GameObjects* Application::getGameObjects(){
+GameObjects* Application::getGameObjects() {
 	return gameObjects;
 }
 
-int Application::getScreenWidth(){
+int Application::getScreenWidth() {
 	return screenWidth;
 }
 
-int Application::getScreenHeight(){
+int Application::getScreenHeight() {
 	return screenHeight;
 }
 
-ITrackable* Application::getTrackTarget(){
+ITrackable* Application::getTrackTarget() {
 	return aiTrackTarget;
 }
 
-void Application::addDrawable(IDrawable* drawable){
+void Application::addDrawable(IDrawable* drawable) {
 	drawables.push_back(drawable);
 }
 
-void Application::removeDrawable(IDrawable* drawable){
+void Application::removeDrawable(IDrawable* drawable) {
 	drawable->destroySprites();
-	for(unsigned int i = 0; i < drawables.size(); i++){
-		if(drawables.at(i) == drawable){
+	for(unsigned int i = 0; i < drawables.size(); i++) {
+		if(drawables.at(i) == drawable) {
 			drawables.erase(drawables.begin() + i);
 			drawables.shrink_to_fit();
 			i -= 1;
@@ -266,8 +407,8 @@ void Application::removeDrawable(IDrawable* drawable){
 	delete drawable;
 }
 
-void Application::clearDrawables(){
-	for(unsigned int i = 0; i < drawables.size(); i++){
+void Application::clearDrawables() {
+	for(unsigned int i = 0; i < drawables.size(); i++) {
 		drawables.shrink_to_fit();
 		drawables.at(i)->destroySprites();
 		drawables.erase(drawables.begin() + i);
@@ -276,14 +417,14 @@ void Application::clearDrawables(){
 	drawables.clear();
 }
 
-void Application::addPlanet(IDrawable* drawable){
+void Application::addPlanet(IDrawable* drawable) {
 	planets.push_back(drawable);
 }
 
-void Application::removePlanet(IDrawable* drawable){
+void Application::removePlanet(IDrawable* drawable) {
 	drawable->destroySprites();
-	for(unsigned int i = 0; i < planets.size(); i++){
-		if(planets.at(i) == drawable){
+	for(unsigned int i = 0; i < planets.size(); i++) {
+		if(planets.at(i) == drawable) {
 			planets.erase(planets.begin() + i);
 			planets.shrink_to_fit();
 			i -= 1;
@@ -292,8 +433,8 @@ void Application::removePlanet(IDrawable* drawable){
 	delete drawable;
 }
 
-void Application::clearPlanets(){
-	for(unsigned int i = 0; i < planets.size(); i++){
+void Application::clearPlanets() {
+	for(unsigned int i = 0; i < planets.size(); i++) {
 		planets.shrink_to_fit();
 		planets.at(i)->destroySprites();
 		planets.erase(planets.begin() + i);
@@ -302,19 +443,19 @@ void Application::clearPlanets(){
 	planets.clear();
 }
 
-void Application::endGame(){
+void Application::endGame() {
 	BASS_ChannelStop(gameObjects->backgroundLoop);
 	clearDrawables();
 	clearPlanets();
 
-	if(scoreTable->isHighScore(score)){
+	if(scoreTable->isHighScore(score)) {
 		//Open the high score name enter state
-	}else{
+	} else {
 		//Open the game over high score display state
 	}
 }
 
-void Application::init(){
+void Application::init() {
 	this->score = 0;
 	this->startCountdown = (int)(startCountdownMax * tickLimit);
 	this->scoreTable = new ScoreTable();
@@ -331,14 +472,15 @@ void Application::init(){
 	getGameObjects()->menuButtons[1] = CreateSprite("./images/buttons/hscores.png", 200, 60, true);
 	getGameObjects()->menuButtons[2] = CreateSprite("./images/buttons/exit.png", 200, 60, true);
 	getGameObjects()->menuButtons[3] = CreateSprite("./images/buttons/ok.png", 200, 60, true);
-	getGameObjects()->stars = CreateSprite("./images/stars.png", WORLD_WIDTH, WORLD_HEIGHT, false);
 	MoveSprite(getGameObjects()->menuButtons[0], (float)screenWidth / 2, (float)screenHeight / 2 - 65);
 	MoveSprite(getGameObjects()->menuButtons[1], (float)screenWidth / 2, (float)screenHeight / 2);
 	MoveSprite(getGameObjects()->menuButtons[2], (float)screenWidth / 2, (float)screenHeight / 2 + 65);
-	MoveSprite(getGameObjects()->menuButtons[3], (float)screenWidth / 2, (float)screenHeight / 2 - 10);
+	MoveSprite(getGameObjects()->menuButtons[3], (float)screenWidth / 2, (float)screenHeight / 2 + 8);
+	getGameObjects()->guiFrameSprite = CreateSprite("./images/guiFrame.png", 480, 360, false);
+	MoveSprite(getGameObjects()->guiFrameSprite, screenWidth / 2 - 480.f / 2, screenHeight / 2 - 360.f / 2);
+	getGameObjects()->stars = CreateSprite("./images/stars.png", WORLD_WIDTH, WORLD_HEIGHT, false);
 
 	//Call all the sound initialisation here
-	getGameObjects()->backgroundLoop = BASS_StreamCreateFile(false, "./sounds/ambience/ambient1.wav", 0, 0, BASS_SAMPLE_LOOP);
 	getGameObjects()->laserFireSound = BASS_StreamCreateFile(false, "./sounds/fire_laser.wav", 0, 0, 0);
 	getGameObjects()->speedUpSound = BASS_StreamCreateFile(false, "./sounds/speedup.wav", 0, 0, 0);
 	BASS_ChannelSetAttribute(getGameObjects()->speedUpSound, BASS_ATTRIB_VOL, 0.50F);
@@ -348,18 +490,18 @@ void Application::init(){
 	getGameObjects()->explosionSound = BASS_StreamCreateFile(false, "./sounds/explode.wav", 0, 0, 0);
 }
 
-void Application::generatePlanets(){
+void Application::generatePlanets() {
 	const int planetsToGenerate = 13;
 	bool usedPlanets[13];
-	for(int i = 0; i < 13; i++){
+	for(int i = 0; i < 13; i++) {
 		usedPlanets[i] = false;
 	}
 
-	for(int i = 0; i < planetsToGenerate; i++){
-		while(true){
+	for(int i = 0; i < planetsToGenerate; i++) {
+		while(true) {
 			int texture = Random::random(0, 12);
 
-			if(!usedPlanets[texture]){
+			if(!usedPlanets[texture]) {
 				usedPlanets[texture] = true;
 
 				int planetX = Random::random(64, WORLD_WIDTH - 64);
@@ -376,29 +518,38 @@ void Application::generatePlanets(){
 	}
 }
 
-void Application::preloadGame(){
+void Application::preloadGame() {
 	//Create all the desired game sprites here
 	getGameObjects()->laserBeamSprite = CreateSprite("./images/beam.png", 10, 4, true);
-	getGameObjects()->laserPowerUpSprite = CreateSprite("./images/powerkit.png", 128, 128, false);
+	getGameObjects()->coinsSprite = CreateSprite("./images/coins.png", 128, 128, false);
 	getGameObjects()->healthPowerUpSprite = CreateSprite("./images/healthkit.png", 128, 128, false);
 	getGameObjects()->playerSprite = CreateSprite("./images/tanker.png", 64, 64, true);
 	getGameObjects()->enemySprite = CreateSprite("./images/enemy.png", 64, 64, true);
 	getGameObjects()->healthRemainSprite = DuplicateSprite(getGameObjects()->healthPowerUpSprite);
+	getGameObjects()->coinsOwnedSprite = DuplicateSprite(getGameObjects()->coinsSprite);
+
+	if(!altTrack) {
+		getGameObjects()->backgroundLoop = BASS_StreamCreateFile(false, "./sounds/ambience/ambient1.wav", 0, 0, BASS_SAMPLE_LOOP);
+	} else {
+		getGameObjects()->backgroundLoop = BASS_StreamCreateFile(false, "./sounds/ambience/ambient2.mp3", 0, 0, BASS_SAMPLE_LOOP);
+	}
+
 	float w = 16.f, h = 16.f;
 	SetSpriteScale(getGameObjects()->healthRemainSprite, w, h);
-	
-	for(int i = 0; i < numExplosions; i++){
+	SetSpriteScale(getGameObjects()->coinsOwnedSprite, w, h);
+
+	for(int i = 0; i < numExplosions; i++) {
 		getGameObjects()->explosionSprites[i] = CreateSprite((std::string("./images/explosion/") + std::to_string(i) + std::string(".png")).c_str(), 128, 128, true);
 	}
+
+	getGameObjects()->playerUpgrades.declareSprites();
 
 	initGame();
 	currentState = GAME;
 }
 
-void Application::initGame(){
-	powerUpFrequency = (int)(30 * tickLimit);
-	healthUpFrequency = (int)(20 * tickLimit);
-	powerUpSpawn = 0;
+void Application::initGame() {
+	healthUpFrequency = (int)(50 * tickLimit);
 	healthUpSpawn = healthUpFrequency / 4;
 	proceduralDifficulty = 1.F;
 	gameTicks = 0;
@@ -406,6 +557,7 @@ void Application::initGame(){
 	//Call all the IDrawable initialisation here
 	Player* pl = new Player(getGameObjects()->playerSprite);
 	aiTrackTarget = pl;
+	playerUpgrades = pl->getUpgrades();
 	addDrawable(pl);
 
 	generatePlanets();
@@ -414,48 +566,68 @@ void Application::initGame(){
 	BASS_ChannelPlay(getGameObjects()->backgroundLoop, false);
 }
 
-int Application::updateGame(){
+int Application::updateGame() {
+	bool mouseDown = GetMouseButtonDown(0);
+	static bool mouseDownLast;
 	static int quitTickDown;
-	if(IsKeyDown(KEY_ESC)){
-		if(quitTickDown >= (2 * 60)){
+	if(IsKeyDown(KEY_ESC)) {
+		if(quitTickDown >= (2 * 60)) {
 			return 0;
-		}else{
+		} else {
 			quitTickDown++;
 		}
-	}else{
+	} else {
 		quitTickDown = 0;
+	}
+
+	static int key_cTickDown;
+	if(IsKeyDown('C')) {
+		key_cTickDown++;
+	} else {
+		key_cTickDown = 0;
 	}
 
 	int mouseX, mouseY;
 	GetMouseLocation(mouseX, mouseY);
 
-	switch(currentState){
+	switch(currentState) {
 	case SPLASH:{
-		static unsigned int ticks;
+					static unsigned int ticks;
 
-		if(ticks >= 240){
-			currentState = MAIN_MENU;
-		}else{
-			ticks++;
-		}
+					if(ticks >= 240) {
+						currentState = MAIN_MENU;
+					} else {
+						ticks++;
+					}
 
-		break;
+					break;
 	}
 	case MAIN_MENU:
-		if(GetMouseButtonDown(0)){
-			if(mouseX > screenWidth / 2 - 100 && mouseX < screenWidth / 2 + 100 && mouseY > screenHeight / 2 - 30 - 65 && mouseY < screenHeight / 2 + 30 - 65){
-				currentState = TUTORIAL;
-			}else if(mouseX > screenWidth / 2 - 100 && mouseX < screenWidth / 2 + 100 && mouseY > screenHeight / 2 - 30 && mouseY < screenHeight / 2 + 30){
+		if(mouseDown && !mouseDownLast) {
+			if(mouseX > screenWidth / 2 - 100 && mouseX < screenWidth / 2 + 100 && mouseY > screenHeight / 2 - 30 - 65 && mouseY < screenHeight / 2 + 30 - 65) {
+				currentState = TRACKPICK;
+			} else if(mouseX > screenWidth / 2 - 100 && mouseX < screenWidth / 2 + 100 && mouseY > screenHeight / 2 - 30 && mouseY < screenHeight / 2 + 30) {
 				currentState = HSCORES;
-			}else if(mouseX > screenWidth / 2 - 100 && mouseX < screenWidth / 2 + 100 && mouseY > screenHeight / 2 - 30 + 65 && mouseY < screenHeight / 2 + 30 + 65){
+			} else if(mouseX > screenWidth / 2 - 100 && mouseX < screenWidth / 2 + 100 && mouseY > screenHeight / 2 - 30 + 65 && mouseY < screenHeight / 2 + 30 + 65) {
 				return 0;
 			}
 		}
 
 		break;
+	case TRACKPICK:
+		if(mouseDown && !mouseDownLast) {
+			if(mouseX > screenWidth / 2 - 350.f / 2 && mouseX < screenWidth / 2 - 350.f / 2 + 350.f && mouseY > screenHeight / 2 - 60.f / 2 - 60 / 2 - 20 && mouseY < screenHeight / 2 - 60.f / 2 - 60 / 2 - 20 + 60.f) {
+				altTrack = false;
+				currentState = TUTORIAL;
+			} else if(mouseX > screenWidth / 2 - 350.f / 2 && mouseX < screenWidth / 2 - 350.f / 2 + 350.f && mouseY >screenHeight / 2 - 60.f / 2 + 20 && mouseY <screenHeight / 2 - 60.f / 2 + 20 + 60.f) {
+				altTrack = true;
+				currentState = TUTORIAL;
+			}
+		}
+		break;
 	case TUTORIAL:
-		if(GetMouseButtonDown(0)){
-			if(mouseX > screenWidth / 2 - 100 && mouseX < screenWidth / 2 + 100 && mouseY > screenHeight / 2 - 30 - 10 && mouseY < screenHeight / 2 + 30 - 10){
+		if(mouseDown && !mouseDownLast) {
+			if(mouseX > screenWidth / 2 - 100 && mouseX < screenWidth / 2 + 100 && mouseY > screenHeight / 2 - 30 + 8 && mouseY < screenHeight / 2 + 30 + 8) {
 				currentState = LOADING;
 			}
 		}
@@ -463,96 +635,100 @@ int Application::updateGame(){
 	case LOADING:
 		preloadGame();
 	case GAME:{
-		if(startCountdown > 0){
-			startCountdown--;
-		}
-		int enemyCount = 0;
-			//applyDifficulty();
-			if(powerUpSpawn <= 0){
+				  if(startCountdown > 0) {
+					  startCountdown--;
+				  }
+				  int enemyCount = 0;
+				  //applyDifficulty();
 
-				int powerUpX = Random::random(64, WORLD_WIDTH - 64);
-				int powerUpY = Random::random(64, WORLD_HEIGHT - 64);
-				int powerUpDespawn = (int)(Random::random(50, 300) * tickLimit);
+				  if(healthUpSpawn <= 0) {
+					  healthUpSpawn = healthUpFrequency;
 
-				addDrawable(new Powerup("laser", getGameObjects()->laserPowerUpSprite, powerUpX, powerUpY, powerUpDespawn));
-				powerUpSpawn = powerUpFrequency;
-			}else{
-				powerUpSpawn--;
-			}
+					  int healthUpX = Random::random(64, WORLD_WIDTH - 64);
+					  int healthUpY = Random::random(64, WORLD_HEIGHT - 64);
+					  int healthUpDespawn = (int)(Random::random(100, 450) * tickLimit);
 
-			if(healthUpSpawn <= 0){
-				healthUpSpawn = healthUpFrequency;
+					  addDrawable(new Powerup("health", getGameObjects()->healthPowerUpSprite, healthUpX, healthUpY, healthUpDespawn));
+				  } else {
+					  if(Random::random(0, 2) != 0) {
+						  healthUpSpawn--;
+					  }
+				  }
 
-				int healthUpX = Random::random(64, WORLD_WIDTH - 64);
-				int healthUpY = Random::random(64, WORLD_HEIGHT - 64);
-				int healthUpDespawn = (int)(Random::random(100, 450) * tickLimit);
+				  drawables.shrink_to_fit();
+				  if(!drawables.empty()) {
+					  for(unsigned int i = 0; i < drawables.size(); i++) {
+						  IDrawable* d = drawables.at(i);
+						  ICollidable* col0 = dynamic_cast<ICollidable*>(d);
 
-				addDrawable(new Powerup("health", getGameObjects()->healthPowerUpSprite, healthUpX, healthUpY, healthUpDespawn));
-			}else{
-				healthUpSpawn--;
-			}
+						  if(col0 != 0 && col0->isCollideTester()) {
+							  for(unsigned int i1 = 0; i1 < drawables.size(); i1++) {
+								  ICollidable* col1 = dynamic_cast<ICollidable*>(drawables.at(i1));
+								  if(col1 != 0) {
+									  if(col0 != col1 && (Collision::rect_intersects(col0->getCX(), col0->getCY(), col0->getWidth(), col0->getHeight(), col1->getCX(), col1->getCY(), col1->getWidth(), col1->getHeight()))) {
+										  col0->onCollide(col1);
+									  }
+								  }
+							  }
+						  }
 
-			drawables.shrink_to_fit();
-			if(!drawables.empty()){
-				for(unsigned int i = 0; i < drawables.size(); i++){
-					IDrawable* d = drawables.at(i);
-					ICollidable* col0 = dynamic_cast<ICollidable*>(d);
+						  //Count how many enemies there are using the main update loop(more efficient than having a separate loop for that)
+						  if(dynamic_cast<Enemy*>(d) != 0) {
+							  enemyCount++;
+						  }
 
-					if(col0 != 0 && col0->isCollideTester()){
-						for(unsigned int i1 = 0; i1 < drawables.size(); i1++){
-							ICollidable* col1 = dynamic_cast<ICollidable*>(drawables.at(i1));
-							if(col1 != 0){
-								if(col0 != col1 && (Collision::rect_intersects(col0->getCX(), col0->getCY(), col0->getWidth(), col0->getHeight(), col1->getCX(), col1->getCY(), col1->getWidth(), col1->getHeight()))){
-									col0->onCollide(col1);
-								}
-							}
-						}
-					}
+						  d->update();
+					  }
+				  }
 
-					//Count how many enemies there are using the main update loop
-					if(dynamic_cast<Enemy*>(d) != 0){
-						enemyCount++;
-					}
+				  //enemy spawning limited to 100 enemies at a time
+				  if(enemyCount < 100 && startCountdown <= 0) {
+					  if(Random::random(0, 250) == 0) {
+						  int xPos = Random::random(0, WORLD_WIDTH);
+						  int yPos = Random::random(0, WORLD_HEIGHT);
+						  int followRange = Random::random(480, 640);
 
-					d->update();
-				}
-			}
+						  addDrawable(new Enemy(getGameObjects()->enemySprite, getGameObjects()->explosionSprites, xPos, yPos, ROT_EAST, 1.5f, 1.f, 1.5f, followRange));
+					  }
+				  }
 
-			//enemy spawning limited to 100 enemies at a time
-			if(enemyCount < 100){
-				if(Random::random(0, 250) == 0){
-					int xPos = Random::random(0, WORLD_WIDTH);
-					int yPos = Random::random(0, WORLD_HEIGHT);
-					int followRange = Random::random(480, 640);
-	
-					addDrawable(new Enemy(getGameObjects()->enemySprite, getGameObjects()->explosionSprites, xPos, yPos, ROT_EAST, 1.5f, 1.f, 1.5f, followRange));
-				}
-			}
+				  if(quitTickDown == 1) {
+					  currentState = PAUSE;
+					  BASS_Pause();
+				  } else if(key_cTickDown == 1) {
+					  currentState = UPGRADE;
+					  BASS_Pause();
+				  }
 
-			if(quitTickDown == 1){
-				currentState = PAUSE;
-				BASS_Pause();
-			}
+				  gameTicks++;
 
-			gameTicks++;
-
-			break;
-		}
-	case PAUSE:
-		if(quitTickDown == 1){
+				  break;
+	}
+	case UPGRADE:
+		if(key_cTickDown == 1 || quitTickDown == 1) {
 			currentState = GAME;
 			BASS_Start();
 		}
+
+		break;
+	case PAUSE:
+		if(quitTickDown == 1) {
+			currentState = GAME;
+			BASS_Start();
+		}
+
+		break;
 	}
-	
+
+	mouseDownLast = mouseDown;
+
 	return -1;
 }
 
-void Application::applyDifficulty(){
-	if(((int)gameTicks % (int)(15 * tickLimit)) == 0){
+void Application::applyDifficulty() {
+	if(((int)gameTicks % (int)(15 * tickLimit)) == 0) {
 		proceduralDifficulty += 0.1F;
 
-		powerUpFrequency *= (int)proceduralDifficulty;
 		healthUpFrequency *= (int)(proceduralDifficulty / 2);
 	}
 }

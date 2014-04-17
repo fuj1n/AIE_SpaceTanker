@@ -3,8 +3,8 @@
 
 #pragma once
 
-class Enemy : public ICollidable, BaseClass{
-private: 
+class Enemy : public ICollidable, BaseClass {
+private:
 	int width, height;
 	float x, y, rotation, currentRotation, speed, scale;
 	SPRITE texture;

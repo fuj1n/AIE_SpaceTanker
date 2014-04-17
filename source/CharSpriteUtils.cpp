@@ -2,15 +2,15 @@
 #include "AIE.h"
 #include <iostream>
 
-namespace{
+namespace {
 	static const unsigned int SHEET_WIDTH = 512, SHEET_HEIGHT = 512, CHAR_WIDTH = 32, CHAR_HEIGHT = 32;
 
-	SPRITE loadFontSheet(){
+	SPRITE loadFontSheet() {
 		return CreateSprite("./images/text.png", SHEET_WIDTH, SHEET_HEIGHT, false);
 	}
 
-	void getCharPosition(const char c, int& x, int& y){
-		switch(c){
+	void getCharPosition(const char c, int& x, int& y) {
+		switch(c) {
 		case ' ':
 			x = 0; y = 2; return;
 		case '!':
@@ -227,11 +227,11 @@ namespace{
 			x = 7; y = 15; return;
 		default:
 			x = 0; y = 0; return;
-		//The remainder of the characters are unrecognisable by me;
+			//The remainder of the characters are unrecognisable by me;
 		}
 	}
 
-	SPRITE getCharSprite(SPRITE charSheet, int x, int y){
+	SPRITE getCharSprite(SPRITE charSheet, int x, int y) {
 		y = 15 - y;
 		SPRITE spr = DuplicateSprite(charSheet);
 		SetSpriteUVCoordinates(spr, (float)(x * CHAR_WIDTH) / SHEET_WIDTH, (float)(y * CHAR_HEIGHT) / SHEET_HEIGHT, (float)(x * CHAR_WIDTH + CHAR_WIDTH) / SHEET_WIDTH, (float)(y * CHAR_HEIGHT + CHAR_HEIGHT) / SHEET_HEIGHT);

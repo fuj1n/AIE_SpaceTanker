@@ -3,13 +3,17 @@
 
 #pragma once
 
-class IParent{
+class IParent {
 public:
-	virtual void onAction(int act){}
+	virtual void onAction(int act) {}
 };
 
-class IDrawable : public IParent{
-public: 
+class IMessageRecepient {
+	virtual int onMessage(std::string message) = 0;
+};
+
+class IDrawable : public IParent {
+public:
 	IParent* parent;
 
 	virtual SPRITE getTexture() = 0;
@@ -17,7 +21,7 @@ public:
 	virtual void destroySprites() = 0;
 };
 
-class ICollidable : public IDrawable{
+class ICollidable : public IDrawable {
 public:
 	virtual unsigned int getCX() = 0;
 	virtual unsigned int getCY() = 0;
@@ -30,7 +34,7 @@ public:
 	virtual std::string getColliderName() = 0;
 };
 
-class ITrackable{
+class ITrackable {
 public:
 	virtual unsigned int getTX() = 0;
 	virtual unsigned int getTY() = 0;

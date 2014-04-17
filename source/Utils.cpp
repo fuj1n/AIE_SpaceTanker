@@ -11,9 +11,9 @@
 
 #pragma once
 
-namespace{
+namespace {
 	template <class kty, class vty>
-	class SimplifiedHashmap{
+	class SimplifiedHashmap {
 	public:
 		typedef kty keyType;
 		typedef vty valueType;
@@ -23,34 +23,33 @@ namespace{
 	public:
 		const keyType noElement;
 
-		SimplifiedHashmap(){
+		SimplifiedHashmap() {
 			keys = new std::vector<keyType>();
 			values = new std::vector<valueType>();
 		}
 
-		valueType get(keyType key){
+		valueType get(keyType key) {
 			int vecID = getElementID(key);
 
-			if(vecID < 0){
+			if(vecID < 0) {
 				return 0;
-			}
-			else{
+			} else {
 				return values->at(vecID);
 			}
 		}
 
-		const valueType &operator[](keyType key) const{
+		const valueType &operator[](keyType key) const {
 			return get(key);
 		}
 
-		int getElementID(keyType key){
-			if(keys->size() != values->size()){
+		int getElementID(keyType key) {
+			if(keys->size() != values->size()) {
 				std::cout << "Fatal Error! Map desync.";
 				throw(42);
 			}
 
-			for(unsigned int i = 0; i < keys->size(); i++){
-				if(keys->at(i) == key){
+			for(unsigned int i = 0; i < keys->size(); i++) {
+				if(keys->at(i) == key) {
 					return i;
 				}
 			}
@@ -58,9 +57,9 @@ namespace{
 			return -1;
 		}
 
-		void put(keyType key, valueType value){
+		void put(keyType key, valueType value) {
 			int vecID = getElementID(key);
-			if(vecID >= 0){
+			if(vecID >= 0) {
 				remove(key);
 			}
 			keys->shrink_to_fit();
@@ -70,9 +69,9 @@ namespace{
 			values->emplace_back(value);
 		}
 
-		void remove(keyType key){
+		void remove(keyType key) {
 			int vecID = getElementID(key);
-			if(vecID >= 0){
+			if(vecID >= 0) {
 				keys->erase(keys->begin() + vecID);
 				values->erase(values->begin() + vecID);
 				keys->shrink_to_fit();
@@ -80,15 +79,15 @@ namespace{
 			}
 		}
 
-		void clear(){
+		void clear() {
 			keys->clear();
 			values->clear();
 			keys->shrink_to_fit();
 			values->shrink_to_fit();
 		}
 
-		unsigned int size(){
-			if(keys->size() != values->size()){
+		unsigned int size() {
+			if(keys->size() != values->size()) {
 				std::cout << "Fatal Error! Map desync.";
 				throw(42);
 			}
@@ -96,26 +95,26 @@ namespace{
 			return keys->size();
 		}
 
-		std::vector<keyType>* getKeys(){
+		std::vector<keyType>* getKeys() {
 			return keys;
 		}
 
-		std::vector<valueType>* getValues(){
+		std::vector<valueType>* getValues() {
 			return values;
 		}
 
-		bool isEmpty(){
+		bool isEmpty() {
 			return keys->empty();
 		}
 
-		bool containsKey(keyType key){
-			if(keys->size() != values->size()){
+		bool containsKey(keyType key) {
+			if(keys->size() != values->size()) {
 				std::cout << "Fatal Error! Map desync.";
 				throw(42);
 			}
 
-			for(unsigned int i = 0; i < keys->size(); i++){
-				if(keys->at(i) == key){
+			for(unsigned int i = 0; i < keys->size(); i++) {
+				if(keys->at(i) == key) {
 					return true;
 				}
 			}
@@ -123,14 +122,14 @@ namespace{
 			return false;
 		}
 
-		bool containsValue(valueType value){
-			if(keys->size() != values->size()){
+		bool containsValue(valueType value) {
+			if(keys->size() != values->size()) {
 				std::cout << "Fatal Error! Map desync.";
 				throw(42);
 			}
 
-			for(unsigned int i = 0; i < keys->size(); i++){
-				if(values ->at(i) == value){
+			for(unsigned int i = 0; i < keys->size(); i++) {
+				if(values->at(i) == value) {
 					return true;
 				}
 			}
@@ -138,17 +137,17 @@ namespace{
 			return false;
 		}
 
-		void print(std::ostream& stream){
-			for(unsigned int i = 0; i < this->size(); i++){
+		void print(std::ostream& stream) {
+			for(unsigned int i = 0; i < this->size(); i++) {
 				stream << getKeys()->at(i) << " : " << getValues()->at(i) << std::endl;
 			}
 		}
 
-		SimplifiedHashmap<keyType, valueType>* clone(){
+		SimplifiedHashmap<keyType, valueType>* clone() {
 			SimplifiedHashmap<keyType, valueType>* temp = new SimplifiedHashmap<keyType, valueType>();
 
-			if(!isEmpty()){
-				for(unsigned int i = 0; i < size(); i++){
+			if(!isEmpty()) {
+				for(unsigned int i = 0; i < size(); i++) {
 					temp->put(keys->at(i), values->at(i));
 				}
 			}
@@ -157,8 +156,8 @@ namespace{
 		}
 	};
 
-	namespace WindowUtils{
-		void getScreenSize(int &width, int &height){
+	namespace WindowUtils {
+		void getScreenSize(int &width, int &height) {
 			RECT desktop;
 
 			const HWND hDesktop = GetDesktopWindow();
@@ -169,7 +168,7 @@ namespace{
 			height = desktop.bottom;
 		}
 
-		void getWindowSize(HWND handle, int &width, int &height){
+		void getWindowSize(HWND handle, int &width, int &height) {
 			RECT window;
 
 			GetWindowRect(handle, &window);
@@ -179,15 +178,15 @@ namespace{
 		}
 	}
 
-	namespace GameUtils{
+	namespace GameUtils {
 
 		/*
 			Get modifiers for projectile position, rotation and direction
-				@param par1 Corner offset
-				@param par2 Side offset (usually double the corner offset)
-		*/
-		void getProjectilePropertyModifiers(float rotation, int& projXDir, int& projYDir, int& projX, int& projY, int par1 = 25, int par2 = 50){
-			switch((int)rotation){
+			@param par1 Corner offset
+			@param par2 Side offset (usually double the corner offset)
+			*/
+		void getProjectilePropertyModifiers(float rotation, int& projXDir, int& projYDir, int& projX, int& projY, int par1 = 25, int par2 = 50) {
+			switch((int)rotation) {
 			case ROT_NORTH:
 				projXDir = 0;
 				projYDir = -1;
@@ -235,100 +234,100 @@ namespace{
 			}
 		}
 
-		void movePlayer(float& x, float& y, float& rotation, float speed, bool wDown, bool sDown, bool aDown, bool dDown, int width, int height){
-			if(IsKeyDown('W') && IsKeyDown('A')){
+		void movePlayer(float& x, float& y, float& rotation, float speed, bool wDown, bool sDown, bool aDown, bool dDown, int width, int height) {
+			if(IsKeyDown('W') && IsKeyDown('A')) {
 				rotation = ROT_NORTHWEST;
 				x -= 1 * speed;
 				y -= 1 * speed;
-			}else if(IsKeyDown('W') && IsKeyDown('D')){
+			} else if(IsKeyDown('W') && IsKeyDown('D')) {
 				rotation = ROT_NORTHEAST;
 				x += 1 * speed;
 				y -= 1 * speed;
-			}else if(IsKeyDown('S') && IsKeyDown('A')){
+			} else if(IsKeyDown('S') && IsKeyDown('A')) {
 				rotation = ROT_SOUTHWEST;
 				x -= 1 * speed;
 				y += 1 * speed;
-			}else if(IsKeyDown('S') && IsKeyDown('D')){
+			} else if(IsKeyDown('S') && IsKeyDown('D')) {
 				rotation = ROT_SOUTHEAST;
 				x += 1 * speed;
 				y += 1 * speed;
-			}else if(IsKeyDown('W')){
+			} else if(IsKeyDown('W')) {
 				rotation = ROT_NORTH;
 				y -= 1 * speed;
-			}else if(IsKeyDown('S')){
+			} else if(IsKeyDown('S')) {
 				rotation = ROT_SOUTH;
 				y += 1 * speed;
-			}else if(IsKeyDown('A')){
+			} else if(IsKeyDown('A')) {
 				rotation = ROT_WEST;
 				x -= 1 * speed;
-			}else if(IsKeyDown('D')){
+			} else if(IsKeyDown('D')) {
 				rotation = ROT_EAST;
 				x += 1 * speed;
 			}
 
-			if(x < width){
+			if(x < width) {
 				x = (float)width;
-			}else if(x > WORLD_WIDTH - width / 2){
+			} else if(x > WORLD_WIDTH - width / 2) {
 				x = (float)(WORLD_WIDTH - width / 2);
 			}
 
-			if(y < height / 2){
+			if(y < height / 2) {
 				y = (float)(height / 2);
-			}else if(y > WORLD_HEIGHT - height / 2){
+			} else if(y > WORLD_HEIGHT - height / 2) {
 				y = (float)(WORLD_HEIGHT - height / 2);
 			}
 		}
 
-		void move(int& x, int& y, int xDirection, int yDirection, float speed, bool boundsCheck = false, int width = 0, int height = 0){
+		void move(int& x, int& y, int xDirection, int yDirection, float speed, bool boundsCheck = false, int width = 0, int height = 0) {
 			x += (int)(xDirection * speed);
 			y += (int)(yDirection * speed);
 		}
 
-		void move(float& x, float& y, int xDirection, int yDirection, float speed, bool boundsCheck = false, int width = 0, int height = 0){
+		void move(float& x, float& y, int xDirection, int yDirection, float speed, bool boundsCheck = false, int width = 0, int height = 0) {
 			x += xDirection * speed;
 			y += yDirection * speed;
 		}
 
-		void rotate(float& rotation, int xSide, int ySide){
-			if(xSide == -1 && ySide == -1){
+		void rotate(float& rotation, int xSide, int ySide) {
+			if(xSide == -1 && ySide == -1) {
 				rotation = ROT_NORTHWEST;
-			}else if(xSide == 0 && ySide == -1){
+			} else if(xSide == 0 && ySide == -1) {
 				rotation = ROT_NORTH;
-			}else if(xSide == 1 && ySide == -1){
+			} else if(xSide == 1 && ySide == -1) {
 				rotation = ROT_NORTHEAST;
-			}else if(xSide == 1 && ySide == 0){
+			} else if(xSide == 1 && ySide == 0) {
 				rotation = ROT_EAST;
-			}else if(xSide == 1 && ySide == 1){
+			} else if(xSide == 1 && ySide == 1) {
 				rotation = ROT_SOUTHEAST;
-			}else if(xSide == 0 && ySide == 1){
+			} else if(xSide == 0 && ySide == 1) {
 				rotation = ROT_SOUTH;
-			}else if(xSide == -1 && ySide == 1){
+			} else if(xSide == -1 && ySide == 1) {
 				rotation = ROT_SOUTHWEST;
-			}else if(xSide == -1 && ySide == 0){
+			} else if(xSide == -1 && ySide == 0) {
 				rotation = ROT_WEST;
-			}else{
+			} else {
 				rotation = rotation > 180 ? 1.f : 181.f;
 			}
 		}
 
-		void currRotation(float& currentRotation, float rotation, int rotationMultiplier = 2){
-			if(rotation - currentRotation > 180){
+		void currRotation(float& currentRotation, float rotation, int rotationMultiplier = 2) {
+			if(rotation - currentRotation > 180) {
 				currentRotation += 360;
-			}else if(rotation - currentRotation < -180){
+			} else if(rotation - currentRotation < -180) {
 				currentRotation -= 360;
 			}
 
-			for(int index = 0; index < rotationMultiplier; index++){
-				if(currentRotation > rotation){
+			for(int index = 0; index < rotationMultiplier; index++) {
+				if(currentRotation > rotation) {
 					currentRotation -= 5;
-				}else if(currentRotation < rotation){
+				} else if(currentRotation < rotation) {
 					currentRotation += 5;
 				}
 			}
 		}
 	}
 
-	namespace Collision{
+	namespace Collision {
 
 		/*
 		Basic rectangular collision test
@@ -341,8 +340,8 @@ namespace{
 		bw = the width of the second rectangle
 		bh = the height of the second rectangle
 		*/
-		bool rect_intersects(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh){
-			if (aw <= 0 || ah <= 0 || bw <= 0 || bh <= 0) {
+		bool rect_intersects(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh) {
+			if(aw <= 0 || ah <= 0 || bw <= 0 || bh <= 0) {
 				return false;
 			}
 			//r = a t = b
@@ -355,29 +354,29 @@ namespace{
 		}
 	}
 
-	namespace Random{
-		int random(int nMin, int nMax){
-			return nMin + (int)((double)rand() / (RAND_MAX+1) * (nMax-nMin+1));
+	namespace Random {
+		int random(int nMin, int nMax) {
+			return nMin + (int)((double)rand() / (RAND_MAX + 1) * (nMax - nMin + 1));
 		}
 	}
 
-	namespace DrawIO{
+	namespace DrawIO {
 		SPRITE line = 1337;
 		SPRITE textSheet = 1337;
 
 		std::vector<SPRITE> destroyQueue;
 
-		void update(){
-			if(!destroyQueue.empty()){
-				for(unsigned int i = 0; i < destroyQueue.size(); i++){
+		void update() {
+			if(!destroyQueue.empty()) {
+				for(unsigned int i = 0; i < destroyQueue.size(); i++) {
 					DestroySprite(destroyQueue.at(i));
 				}
 				destroyQueue.clear();
 			}
 		}
 
-		void drawLine(float x, float y, float length, float thickness, float rotation, SColour color = SColour(0xFFFFFFFF)){
-			if(line == 1337){
+		void drawLine(float x, float y, float length, float thickness, float rotation, SColour color = SColour(0xFFFFFFFF)) {
+			if(line == 1337) {
 				line = CreateSprite("./images/line.png", 1, 1, false);
 			}
 
@@ -391,33 +390,32 @@ namespace{
 			destroyQueue.push_back(line2);
 		}
 
-		void drawRect(float x, float y, float width, float height, float rotation, float thickness, SColour color = SColour(0xFFFFFFFF)){
+		void drawRect(float x, float y, float width, float height, float rotation, float thickness, SColour color = SColour(0xFFFFFFFF)) {
 			drawLine(x, y, width, thickness, rotation, color);
 			drawLine(x, y + height - thickness, width, thickness, rotation, color);
 			drawLine(x, y, thickness, height, rotation, color);
 			drawLine(x + width - thickness, y, thickness, height, rotation, color);
 		}
 
-		void fillRect(float x, float y, float width, float height, float rotation, SColour color = SColour(0xFFFFFFFF)){
+		void fillRect(float x, float y, float width, float height, float rotation, SColour color = SColour(0xFFFFFFFF)) {
 			drawLine(x, y, width, height, rotation, color);
 		}
 
-		void drawString(std::string s, float x, float y, float width, float height, float spacing, SColour color = SColour(0xFFFFFFFF), bool useDefaultForUnknown = false){
-			if(textSheet == 1337){
+		void drawString(std::string s, float x, float y, float width, float height, float spacing, SColour color = SColour(0xFFFFFFFF), bool useDefaultForUnknown = false) {
+			if(textSheet == 1337) {
 				textSheet = loadFontSheet();
 			}
 
 			float cX = x, cY = y;
 
-			for(unsigned int i = 0; i < s.length(); i++){
+			for(unsigned int i = 0; i < s.length(); i++) {
 				char c = s.c_str()[i];
 				int sX, sY;
-				if(c != ' '){
+				if(c != ' ') {
 					getCharPosition(c, sX, sY);
-					if(sX == 0 && sY == 0 && useDefaultForUnknown){
+					if(sX == 0 && sY == 0 && useDefaultForUnknown) {
 						DrawString(&c, (int)cX, (int)cY, color);
-					}
-					else{
+					} else {
 						SPRITE spr = getCharSprite(textSheet, sX, sY);
 						SetSpriteScale(spr, width, height);
 						SetSpriteColour(spr, color);
@@ -430,24 +428,24 @@ namespace{
 			}
 		}
 
-		void drawString(char* s, float x, float y, float width, float height, float spacing, SColour color = SColour(0xFFFFFFFF)){
+		void drawString(char* s, float x, float y, float width, float height, float spacing, SColour color = SColour(0xFFFFFFFF)) {
 			drawString(std::string(s), x, y, width, height, spacing, color);
 		}
 	}
 
-	namespace FileIO{
-		void write(char* file, SimplifiedHashmap<std::string, std::string>* map){
+	namespace FileIO {
+		void write(char* file, SimplifiedHashmap<std::string, std::string>* map) {
 			std::fstream bo;
-			
+
 			bo.open(file, std::ios_base::out);
-			if(bo.is_open()){
-				for(unsigned int i = 0; i < map->size(); i++){
+			if(bo.is_open()) {
+				for(unsigned int i = 0; i < map->size(); i++) {
 					std::string key = map->getKeys()->at(i);
-					if(key != ""){
+					if(key != "") {
 						std::string value = map->get(key);
-						if(value != ""){
+						if(value != "") {
 							bo << key << ":" << value;
-							if(i + 1 < map->size()){
+							if(i + 1 < map->size()) {
 								bo << std::endl;
 							}
 						}
@@ -457,24 +455,24 @@ namespace{
 				bo.sync();
 				bo.close();
 				bo.clear();
-			}else{
+			} else {
 				std::cout << "Error, access to file " << file << " is denied!" << std::endl;
 			}
 		}
 
-		void read(char* file, SimplifiedHashmap<std::string, std::string>* map){
+		void read(char* file, SimplifiedHashmap<std::string, std::string>* map) {
 			std::fstream br;
 
 			br.open(file, std::ios_base::in);
-			if(br.is_open()){
+			if(br.is_open()) {
 				int lineCounter = 1;
-				while(!br.eof()){
+				while(!br.eof()) {
 					std::string inBuffer;
 					std::getline(br, inBuffer);
 
-					if(inBuffer.find(':', 0) == std::string::npos){
+					if(inBuffer.find(':', 0) == std::string::npos) {
 						std::cout << "Syntax error on line " << lineCounter << " in file " << file << "." << std::endl;
-					}else{
+					} else {
 						size_t separatorLocation = inBuffer.find(':', 0);
 						std::string key = inBuffer.substr(0, separatorLocation);
 						std::string value = inBuffer.substr(separatorLocation + 1);;
@@ -488,14 +486,14 @@ namespace{
 				br.sync();
 				br.close();
 				br.clear();
-			}else{
+			} else {
 				std::cout << "Error, access to file " << file << " is denied or the file doesn't exist" << std::endl;
 			}
 		}
 	}
 
-	namespace Crypt{
-		std::string encryptDecrypt(const char* key, std::string crypt){
+	namespace Crypt {
+		std::string encryptDecrypt(const char* key, std::string crypt) {
 			std::string output = crypt;
 
 			for(unsigned int i = 0; i < crypt.size(); i++)
@@ -505,10 +503,10 @@ namespace{
 		}
 
 		template<class keyType, class valueType>
-		SimplifiedHashmap<keyType, valueType>* encryptDecryptMap(const char* key, SimplifiedHashmap<keyType, valueType>* source){
+		SimplifiedHashmap<keyType, valueType>* encryptDecryptMap(const char* key, SimplifiedHashmap<keyType, valueType>* source) {
 			SimplifiedHashmap<keyType, valueType>* temp = source->clone();
 
-			for(unsigned int i = 0; i < temp->size(); i++){
+			for(unsigned int i = 0; i < temp->size(); i++) {
 				temp->getKeys()->at(i) = encryptDecrypt(key, temp->getKeys()->at(i));
 				temp->getValues()->at(i) = encryptDecrypt(key, temp->getValues()->at(i));
 			}
