@@ -133,6 +133,10 @@ void Player::onCollide(ICollidable* col) {
 		health += 35;
 		col->onTesterMessage(this);
 		BASS_ChannelPlay(getApplication()->getGameObjects()->healthUpSound, false);
+	} else if(colliderName == "powerup::coins") {
+		upgrades->availableCoins += 10;
+		col->onTesterMessage(this);
+		BASS_ChannelPlay(getApplication()->getGameObjects()->coinPickupSound, true);
 	}
 
 	if(health < 0) {

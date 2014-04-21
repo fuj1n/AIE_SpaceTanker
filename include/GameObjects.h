@@ -44,10 +44,9 @@ public:
 	HSTREAM backgroundLoop;
 	HSTREAM laserFireSound;
 	HSTREAM speedUpSound;
-	HSTREAM powerUpSound;
-	HSTREAM powerDownSound;
 	HSTREAM healthUpSound;
 	HSTREAM explosionSound;
+	HSTREAM coinPickupSound;
 
 	struct PlayerUpgrades {
 		SPRITE speed, maxHealth, bulletSpeed, damageResistance, maxRange, sprintDuration, sprintCooldownSpeed, fireRate;
@@ -72,9 +71,8 @@ public:
 		BASS_StreamFree(backgroundLoop);
 		BASS_StreamFree(laserFireSound);
 		BASS_StreamFree(speedUpSound);
-		BASS_StreamFree(powerUpSound);
-		BASS_StreamFree(powerDownSound);
 		BASS_StreamFree(healthUpSound);
 		BASS_StreamFree(explosionSound);
+		BASS_StreamFree(coinPickupSound);
 	}
 };

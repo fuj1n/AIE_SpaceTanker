@@ -224,7 +224,6 @@ void Application::draw() {
 		}
 
 		int startCountdown = (int)roundf(this->startCountdown / (float)tickLimit);
-
 		if(currentState == GAME) {
 			if(startCountdown > 0) {
 				char* cdownValue = new char[10];
@@ -484,10 +483,9 @@ void Application::init() {
 	getGameObjects()->laserFireSound = BASS_StreamCreateFile(false, "./sounds/fire_laser.wav", 0, 0, 0);
 	getGameObjects()->speedUpSound = BASS_StreamCreateFile(false, "./sounds/speedup.wav", 0, 0, 0);
 	BASS_ChannelSetAttribute(getGameObjects()->speedUpSound, BASS_ATTRIB_VOL, 0.50F);
-	getGameObjects()->powerUpSound = BASS_StreamCreateFile(false, "./sounds/powerup.wav", 0, 0, 0);
-	getGameObjects()->powerDownSound = BASS_StreamCreateFile(false, "./sounds/powerdown.wav", 0, 0, 0);
 	getGameObjects()->healthUpSound = BASS_StreamCreateFile(false, "./sounds/pickup.wav", 0, 0, 0);
 	getGameObjects()->explosionSound = BASS_StreamCreateFile(false, "./sounds/explode.wav", 0, 0, 0);
+	getGameObjects()->coinPickupSound = BASS_StreamCreateFile(false, "./sounds/coin.wav", 0, 0, 0);
 }
 
 void Application::generatePlanets() {
@@ -708,6 +706,67 @@ int Application::updateGame() {
 		if(key_cTickDown == 1 || quitTickDown == 1) {
 			currentState = GAME;
 			BASS_Start();
+		}
+
+		if(true) {
+			int upgradeIndex = 0;
+			float plY = screenHeight / 2 - 16.f - (360 / 3 + 30) + 35;
+			for(int i = 1; i <= 4; i++) {
+				float plX = screenWidth / 2 - 480.f / 2 + 16;
+				for(int j = 1; j <= 2; j++) {
+					if(mouseDown && !mouseDownLast) {
+						if(mouseX > plX && mouseX < plX + 216 && mouseY > plY && mouseY < plY + 64) {
+							int* upgradeLevel = nullptr;
+							int upgradePrice;
+
+							switch(upgradeIndex) {
+							case 0:
+								upgradeLevel = &playerUpgrades->speed;
+								upgradePrice = playerUpgrades->speedPrice;
+								break;
+							case 1:
+								upgradeLevel = &playerUpgrades->maxHealth;
+								upgradePrice = playerUpgrades->healthPrice;
+								break;
+							case 2:
+								upgradeLevel = &playerUpgrades->bulletSpeed;
+								upgradePrice = playerUpgrades->bspeedPrice;
+								break;
+							case 3:
+								upgradeLevel = &playerUpgrades->damageResistance;
+								upgradePrice = playerUpgrades->damResPrice;
+								break;
+							case 4:
+								upgradeLevel = &playerUpgrades->maxRange;
+								upgradePrice = playerUpgrades->maxRangePrice;
+								break;
+							case 5:
+								upgradeLevel = &playerUpgrades->fireRate;
+								upgradePrice = playerUpgrades->fireRatePrice;
+								break;
+							case 6:
+								upgradeLevel = &playerUpgrades->sprintDuration;
+								upgradePrice = playerUpgrades->sprintDurPrice;
+								break;
+							case 7:
+								upgradeLevel = &playerUpgrades->sprintCooldownSpeed;
+								upgradePrice = playerUpgrades->sprintCdnPrice;
+								break;
+							}
+							if(upgradeLevel != nullptr && *upgradeLevel < 5) {
+								upgradePrice *= *upgradeLevel;
+								if(upgradePrice <= playerUpgrades->availableCoins) {
+									*upgradeLevel = *upgradeLevel + 1;
+									playerUpgrades->availableCoins -= upgradePrice;
+								}
+							}
+						}
+					}
+					plX += 216 + 15;
+					upgradeIndex++;
+				}
+				plY += 64 + 10;
+			}
 		}
 
 		break;

@@ -1,6 +1,7 @@
 #include "Enemy.h"
 
 #include "Utils.cpp"
+#include "Powerup.h"
 
 Enemy::Enemy(SPRITE sprite, SPRITE explosionSprites[], int x, int y, float rotation, float speed, float scale, float explosionScale, int followRange) {
 	width = height = 64;
@@ -36,6 +37,9 @@ Enemy::Enemy(SPRITE sprite, SPRITE explosionSprites[], int x, int y, float rotat
 
 void Enemy::update() {
 	if(!isAlive && isDead) {
+		if(Random::random(0, 52) != 0) {
+			getApplication()->addDrawable(new Powerup("coins", getApplication()->getGameObjects()->coinsSprite, (int)x, (int)y, (int)(30 * getApplication()->getTickLimit())));
+		}
 		getApplication()->removeDrawable(this);
 		return;
 	} else if(!isAlive) {
