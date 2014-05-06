@@ -18,6 +18,9 @@ Application::Application(int screenWidth, int screenHeight, bool isFullscreen) {
 
 	this->fps = 0;
 	this->tps = 0;
+
+	int* myPtr = &fps;
+	int** mistery = &myPtr;
 }
 
 Application::~Application() {
@@ -217,7 +220,7 @@ void Application::draw() {
 			}
 		}
 
-		if(maxSprintCooldown > 0 && sprintCooldown > 0) {
+		if(maxSprintCooldown > 0 && sprintCooldown > 1) {
 			float percent = (float)sprintCooldown / (float)maxSprintCooldown;
 			//I don't trust AIE DrawLine, seems semi-broken
 			DrawIO::drawLine(cameraX + 20.f, cameraY + screenHeight - 25.f, percent * (float)(screenWidth - 40), 20.f, 0.f, SColour(0xFFFF00FF));
@@ -250,9 +253,11 @@ void Application::draw() {
 			MoveSprite(getGameObjects()->coinsOwnedSprite, (float)cameraX + 15, (float)cameraY + screenHeight - 43);
 			DrawSprite(getGameObjects()->coinsOwnedSprite);
 
-			MoveSprite(gameObjects->guiFrameSprite, cameraX + screenWidth / 2 - 480.f / 2, cameraY + screenHeight / 2 - 360.f / 2);
-			DrawSprite(gameObjects->guiFrameSprite);
-			DrawIO::drawString("Tanker Customisation", cameraX + screenWidth / 2 - 8.f * 20, cameraY + screenHeight / 2 - 16.f - (360 / 3 + 30), 32.f, 32.f, 0.f);
+			//Optimisation: using a prefab with pre-built text
+
+			MoveSprite(gameObjects->guiTankerCustomisationPrefabSprite, cameraX + screenWidth / 2 - 480.f / 2, cameraY + screenHeight / 2 - 360.f / 2);
+			DrawSprite(gameObjects->guiTankerCustomisationPrefabSprite);
+			//DrawIO::drawString("Tanker Customisation", cameraX + screenWidth / 2 - 8.f * 20, cameraY + screenHeight / 2 - 16.f - (360 / 3 + 30), 32.f, 32.f, 0.f);
 
 			int upgradeIndex = 0;
 			float plY = cameraY + screenHeight / 2 - 16.f - (360 / 3 + 30) + 35;
@@ -345,21 +350,27 @@ void Application::drawUpgradeStats(int index, float x, float y) {
 
 	upgradePrice *= upgradeLevel;
 
-	DrawIO::drawRect(x, y, 216.f, 64.f, 0.f, 1.f, col);
+	if(col.colour != SColour(0xFFFFFFFF).colour) {
+		DrawIO::drawRect(x, y, 216.f, 64.f, 0.f, 1.f, col);
+		DrawIO::drawString(upgradeName, x + 2, y + 2, 16.f, 16.f, 0.f, col);
+		MoveSprite(upgradeIcon, x + 216.f - 18.f, y + 2);
+		SetSpriteColour(upgradeIcon, col);
+		DrawSprite(upgradeIcon);
+	}
 
-	DrawIO::drawString(upgradeName, x + 2, y + 2, 16.f, 16.f, 0.f, col);
-	MoveSprite(upgradeIcon, x + 216.f - 18.f, y + 2);
-	SetSpriteColour(upgradeIcon, col);
-	DrawSprite(upgradeIcon);
-
-	DrawIO::drawString(upgradeLevel == 5 ? std::string("Fully upgraded.") : std::string("Price: ") + std::to_string(upgradePrice), x + 2, y + 20, 16.f, 16.f, 0.f, upgradeLevel == 5 ? col : playerUpgrades->availableCoins >= upgradePrice && upgradePrice != -1 ? col : SColour(0x0000FFFF));
+	if(upgradeLevel != 5) {
+		DrawIO::drawString(upgradeLevel == 5 ? std::string("Fully upgraded.") : std::string("Price: ") + std::to_string(upgradePrice), x + 2, y + 20, 16.f, 16.f, 0.f, upgradeLevel == 5 ? col : playerUpgrades->availableCoins >= upgradePrice && upgradePrice != -1 ? col : SColour(0x0000FFFF));
+	} else {
+		MoveSprite(getGameObjects()->guiFullyUpgradedPrefabSprite, x + 4, y + 21);
+		DrawSprite(getGameObjects()->guiFullyUpgradedPrefabSprite);
+	}
 
 	float spX = x + 8;
 	for(int i = 1; i <= 5; i++) {
 		if(upgradeLevel >= i) {
 			DrawIO::fillRect(spX, y + 38.f, 16.f, 16.f, 0.f, col);
 		} else {
-			DrawIO::drawRect(spX, y + 38.f, 16.f, 16.f, 0.f, 1.f, col);
+			//DrawIO::drawRect(spX, y + 38.f, 16.f, 16.f, 0.f, 1.f, col);
 		}
 		spX += 18.f;
 	}
@@ -476,7 +487,8 @@ void Application::init() {
 	MoveSprite(getGameObjects()->menuButtons[2], (float)screenWidth / 2, (float)screenHeight / 2 + 65);
 	MoveSprite(getGameObjects()->menuButtons[3], (float)screenWidth / 2, (float)screenHeight / 2 + 8);
 	getGameObjects()->guiFrameSprite = CreateSprite("./images/guiFrame.png", 480, 360, false);
-	MoveSprite(getGameObjects()->guiFrameSprite, screenWidth / 2 - 480.f / 2, screenHeight / 2 - 360.f / 2);
+	getGameObjects()->guiTankerCustomisationPrefabSprite = CreateSprite("./images/prefabs/tankerCustomisation.png", 480, 360, false);
+	getGameObjects()->guiFullyUpgradedPrefabSprite = CreateSprite("./images/prefabs/strFullyUpgraded.png", 120, 13, false);
 	getGameObjects()->stars = CreateSprite("./images/stars.png", WORLD_WIDTH, WORLD_HEIGHT, false);
 
 	//Call all the sound initialisation here
@@ -758,6 +770,11 @@ int Application::updateGame() {
 								if(upgradePrice <= playerUpgrades->availableCoins) {
 									*upgradeLevel = *upgradeLevel + 1;
 									playerUpgrades->availableCoins -= upgradePrice;
+
+									if(upgradeLevel == &playerUpgrades->maxHealth) {
+										playerUpgrades->healthAdded = playerUpgrades->calculateMaxHealth() - playerUpgrades->calculateMaxHealth(*upgradeLevel - 1);
+										std::cout << "Adding " << playerUpgrades->healthAdded << "health..." << std::endl;
+									}
 								}
 							}
 						}

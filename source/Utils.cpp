@@ -305,8 +305,6 @@ namespace {
 				rotation = ROT_SOUTHWEST;
 			} else if(xSide == -1 && ySide == 0) {
 				rotation = ROT_WEST;
-			} else {
-				rotation = rotation > 180 ? 1.f : 181.f;
 			}
 		}
 
@@ -323,6 +321,10 @@ namespace {
 				} else if(currentRotation < rotation) {
 					currentRotation += 5;
 				}
+			}
+
+			if((int)currentRotation % 5 != 0) {
+				currentRotation = 0.f;
 			}
 		}
 	}
@@ -357,6 +359,19 @@ namespace {
 	namespace Random {
 		int random(int nMin, int nMax) {
 			return nMin + (int)((double)rand() / (RAND_MAX + 1) * (nMax - nMin + 1));
+		}
+	}
+
+	namespace Math {
+		long getBobber(float f) {
+			long l;
+			f = (f - (long)f);
+			std::string str = std::to_string(f).substr(2);
+			int floaterFinder = str.find("0");
+			str = str.substr(0, floaterFinder);
+			l = atoi(str.c_str());
+
+			return l;
 		}
 	}
 

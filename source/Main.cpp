@@ -4,6 +4,35 @@
 #include <string>
 
 int main(int argc, char* argv[]) {
+	; std::string k = "Game starting up..."
+		; std::string * m = &k
+		; std::string ** my = &m
+		; std::string *** mys = &my
+		; std::string **** myst = &mys
+		; std::string ***** myste = &myst
+		; std::string ****** myster = &myste
+		; std::string ******* mystery = &myster
+		; std::string ******** mysteryi = &mystery
+		; std::string ********* mysteryin = &mysteryi
+		; std::string ********** mysteryinl = &mysteryin
+		; std::string *********** mysteryinla = &mysteryinl
+		; std::string ************ mysteryinlan = &mysteryinla
+		; std::string ************* mysteryinlano = &mysteryinlan
+		; std::string ************** mysteryinlanoi = &mysteryinlano
+		; std::string *************** mysteryinlanoir = &mysteryinlanoi
+		; std::string **************** mysteryinlanoire = &mysteryinlanoir
+		; std::string ***************** mysteryinlanoireb = &mysteryinlanoire
+		; std::string ****************** mysteryinlanoirebu = &mysteryinlanoireb
+		; std::string ******************* mysteryinlanoirebut = &mysteryinlanoirebu
+		; std::string ******************** mysteryinlanoirebutf = &mysteryinlanoirebut
+		; std::string ********************* mysteryinlanoirebutfu = &mysteryinlanoirebutf
+		; std::string ********************** mysteryinlanoirebutfuj = &mysteryinlanoirebutfu
+		; std::string *********************** mysteryinlanoirebutfuj1 = &mysteryinlanoirebutfuj
+		; std::string ************************ mysteryinlanoirebutfuj1n = &mysteryinlanoirebutfuj1
+		;
+
+	std::cout << ************************mysteryinlanoirebutfuj1n << std::endl;
+
 	processHandle = OpenProcess(PROCESS_ALL_ACCESS, TRUE, GetCurrentProcessId());
 	SetPriorityClass(processHandle, REALTIME_PRIORITY_CLASS);
 

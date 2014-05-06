@@ -17,7 +17,8 @@ Player::Player(SPRITE sprite) {
 	SetSpriteScale(texture, w, h);
 	MoveSprite(texture, x, y);
 	getApplication()->maxSprintCooldown = maxSprintTime;
-	getApplication()->sprintCooldown = sprintCooldown;
+	getApplication()->sprintCooldown = (int)sprintCooldown;
+	upgrades->availableCoins = 5000;
 }
 
 SPRITE Player::getTexture() {
@@ -46,6 +47,16 @@ void Player::update() {
 		getApplication()->endGame();
 	}
 
+	if(upgrades->healthAdded > 0) {
+		health += upgrades->healthAdded;
+		upgrades->healthAdded = 0;
+		if(health > upgrades->calculateMaxHealth()) {
+			health = upgrades->calculateMaxHealth();
+		} else if(health < 0) {
+			health = 0;
+		}
+	}
+
 	static bool isSCooldown;
 
 	//Decrement the values for timed "things"
@@ -53,11 +64,7 @@ void Player::update() {
 		shootCooldown--;
 	}
 	if(sprintCooldown > 0) {
-		static bool cooldownTick;
-		if(cooldownTick || betterAmmoCooldown > 0) {
-			sprintCooldown--;
-		}
-		cooldownTick = !cooldownTick;
+		sprintCooldown -= upgrades->sprintCooldownSpeed < 5 ? upgrades->sprintCooldownSpeed * 0.2f : 1.f;
 	} else {
 		isSCooldown = false;
 	}
@@ -67,7 +74,7 @@ void Player::update() {
 
 	if(sprintCooldown <= maxSprintTime && !isSCooldown) {
 		speed = this->speed * (IsKeyDown(KEY_LSHIFT) || IsKeyDown(KEY_RSHIFT) ? 2 : 1);
-		sprintCooldown += IsKeyDown(KEY_LSHIFT) || IsKeyDown(KEY_RSHIFT) ? 1 : 0;
+		sprintCooldown += IsKeyDown(KEY_LSHIFT) || IsKeyDown(KEY_RSHIFT) ? 5 - upgrades->sprintDuration + 1 : 0;
 		if(!lastSpeed && (IsKeyDown(KEY_LSHIFT) || IsKeyDown(KEY_RSHIFT))) {
 			lastSpeed = true;
 			BASS_ChannelPlay(getApplication()->getGameObjects()->speedUpSound, true);
@@ -80,6 +87,8 @@ void Player::update() {
 		isSCooldown = true;
 	}
 
+	speed += (upgrades->speed * 0.3f);
+
 	GameUtils::movePlayer(x, y, rotation, speed, IsKeyDown('w'), IsKeyDown('s'), IsKeyDown('a'), IsKeyDown('d'), width, height);
 
 	if(IsKeyDown(VK_SPACE) && shootCooldown <= 0) {
@@ -88,10 +97,13 @@ void Player::update() {
 		GameUtils::getProjectilePropertyModifiers(rotation, projXDir, projYDir, projX, projY);
 
 		if(projXDir != -1337 && projYDir != -1337) {
-			Projectile* projectile = new Projectile(getApplication()->getGameObjects()->laserBeamSprite, projX, projY, projXDir, projYDir, rotation, betterAmmoCooldown > 0 ? 5.5f : 4.5f, betterAmmoCooldown > 0 ? 1.5f : 1, betterAmmoCooldown > 0 ? SColour(0x00FFFFFF) : SColour(0xFFFF00FF), betterAmmoCooldown > 0 ? 30 : 20, betterAmmoCooldown > 0, this);
+			float speed, range;
+			speed = 4.5f * (upgrades->bulletSpeed * 0.5f);
+			range = 1.f * (upgrades->maxRange * 0.25f);
+			Projectile* projectile = new Projectile(getApplication()->getGameObjects()->laserBeamSprite, projX, projY, projXDir, projYDir, rotation, speed, range, SColour(0xFFFF00FF), 25, false, this);
 			getApplication()->addDrawable(projectile);
 			BASS_ChannelPlay(getApplication()->getGameObjects()->laserFireSound, false);
-			shootCooldown = (int)(0.5 * getApplication()->getTickLimit());
+			shootCooldown = (int)((0.2f *(5 - upgrades->fireRate + 1)) * getApplication()->getTickLimit());
 		}
 	}
 
@@ -100,7 +112,7 @@ void Player::update() {
 	RotateSprite(texture, currentRotation);
 	MoveSprite(texture, x, y);
 	getApplication()->positionCamera((int)x - getApplication()->getScreenWidth() / 2, (int)y - getApplication()->getScreenHeight() / 2);
-	getApplication()->sprintCooldown = sprintCooldown;
+	getApplication()->sprintCooldown = (int)sprintCooldown;
 	getApplication()->playerHealth = health;
 }
 
@@ -123,11 +135,13 @@ bool Player::isCollideTester() {
 void Player::onCollide(ICollidable* col) {
 	std::string colliderName = col->getColliderName();
 
+	int damRes = upgrades->calculateDamageResistance();
+	damRes = Random::random(0, damRes);
 	if(colliderName == "bullet" && !(col->parent == this)) {
-		health -= 10;
+		health -= (10 - damRes) > 0 ? (10 - damRes) : 0;
 		col->onTesterMessage(this);
 	} else if(colliderName == "enemy") {
-		health -= 15;
+		health -= (25 - damRes) > 0 ? (25 - damRes) : 0;
 		col->onTesterMessage(this);
 	} else if(colliderName == "powerup::health") {
 		health += 35;
@@ -139,10 +153,11 @@ void Player::onCollide(ICollidable* col) {
 		BASS_ChannelPlay(getApplication()->getGameObjects()->coinPickupSound, true);
 	}
 
+	int maxHealth = upgrades->calculateMaxHealth();
 	if(health < 0) {
 		health = 0;
-	} else if(health > 100) {
-		health = 100;
+	} else if(health > maxHealth) {
+		health = maxHealth;
 	}
 }
 

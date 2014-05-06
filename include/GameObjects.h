@@ -26,7 +26,10 @@ public:
 	SPRITE instructionTexture;
 	SPRITE menuButtons[4];
 	SPRITE stars;
+
 	SPRITE guiFrameSprite;
+	SPRITE guiTankerCustomisationPrefabSprite;
+	SPRITE guiFullyUpgradedPrefabSprite;
 
 	SPRITE laserBeamSprite;
 	SPRITE healthPowerUpSprite;

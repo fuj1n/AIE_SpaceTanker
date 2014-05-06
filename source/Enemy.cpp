@@ -69,8 +69,6 @@ void Enemy::update() {
 		ySide = getApplication()->getTrackTarget()->getTY() < y ? -1 : getApplication()->getTrackTarget()->getTY() > y ? 1 : 0;
 
 		GameUtils::rotate(rotation, xSide, ySide);
-	} else {
-		rotation = currentRotation > 180.f ? 1 : 181.f;
 	}
 
 	GameUtils::currRotation(currentRotation, rotation);

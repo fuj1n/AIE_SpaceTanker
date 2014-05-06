@@ -12,7 +12,8 @@ private:
 	float x, y, rotation, currentRotation, speed, scale;
 	int health;
 
-	int shootCooldown, betterAmmoCooldown, sprintCooldown, maxSprintTime;
+	int shootCooldown, maxSprintTime;
+	float sprintCooldown;
 
 	SPRITE texture;
 

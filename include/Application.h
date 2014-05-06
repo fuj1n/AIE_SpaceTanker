@@ -49,18 +49,15 @@ public:
 	int speed, maxHealth, bulletSpeed, damageResistance, maxRange, fireRate, sprintDuration, sprintCooldownSpeed;
 	int speedPrice, healthPrice, bspeedPrice, damResPrice, maxRangePrice, fireRatePrice, sprintDurPrice, sprintCdnPrice;
 
+	int healthAdded;
+
 	PlayerUpgrades() {
 		availableCoins = 0;
 
-		speed = 1;
-		maxHealth = 1;
-		bulletSpeed = 1;
-		damageResistance = 1;
-		maxRange = 1;
-		sprintDuration = 1;
-		sprintCooldownSpeed = 1;
-		fireRate = 1;
+		speed = maxHealth = bulletSpeed = damageResistance = maxRange = sprintDuration = sprintCooldownSpeed = fireRate = 1;
+		fireRate = 5;
 
+		healthAdded = 0;
 		speedPrice = 15;
 		healthPrice = 30;
 		bspeedPrice = 20;
@@ -69,6 +66,24 @@ public:
 		fireRatePrice = 100;
 		sprintDurPrice = 75;
 		sprintCdnPrice = 80;
+	}
+
+	int calculateMaxHealth(int upgradeLevel = -1) {
+		if(upgradeLevel == -1) {
+			upgradeLevel = maxHealth;
+		}
+		return (int)roundf(100 + (50 * (upgradeLevel - 1) * 0.5f));
+	}
+
+	long calculateDamageResistance(int upgradeLevel = -1) {
+		if(upgradeLevel == -1) {
+			upgradeLevel = damageResistance;
+		}
+
+		float calc = (upgradeLevel - 1) * 0.4f;
+		calc = (float)((long)calc * 10) + Math::getBobber(calc);
+
+		return (long)calc * 2;
 	}
 };
 
