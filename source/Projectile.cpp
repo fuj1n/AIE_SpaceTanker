@@ -1,4 +1,4 @@
-#include "Projectile.h"
+#include "Projectile.hpp"
 
 Projectile::Projectile(SPRITE sprite, int x, int y, int xDir, int yDir, float rotation, float speed, float stayTime, SColour color, int length, bool special, IParent* parent) {
 	scale = 1;

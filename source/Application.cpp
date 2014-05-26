@@ -1,10 +1,11 @@
-#include "Application.h"
+#include "Application.hpp"
 
-#include "Enemy.h"
-#include "Planet.h"
-#include "Player.h"
-#include "Powerup.h"
+#include "Enemy.hpp"
+#include "Planet.hpp"
+#include "Player.hpp"
+#include "Powerup.hpp"
 #include "Utils.cpp"
+#include <array>
 
 Application* Application::instance;
 
@@ -19,8 +20,9 @@ Application::Application(int screenWidth, int screenHeight, bool isFullscreen) {
 	this->fps = 0;
 	this->tps = 0;
 
-	int* myPtr = &fps;
-	int** mistery = &myPtr;
+	earnedHighScore = false;
+
+	Input::fillDefaults();
 }
 
 Application::~Application() {
@@ -33,27 +35,6 @@ Application::~Application() {
 }
 
 int Application::run() {
-	//ScoreTable tbl = ScoreTable();
-	////Score table write test
-	//tbl.putScore("abc", 52000);
-	//tbl.putScore("cba", 32000);
-	//tbl.putScore("wtf", 15000);
-	//tbl.putScore("tra", 88531);
-	//tbl.putScore("fuj", 49284);
-	//tbl.putScore("jar", 59482);
-	//tbl.putScore("wet", 82182);
-	//tbl.putScore("wtf", 52000);
-	//tbl.putScore("jnx", 100000);
-	//tbl.putScore("dxd", 482);
-	//tbl.putScore("aux", 20000);
-	//tbl.save();
-
-	////Score table read test
-	//tbl.load();
-	//tbl.scoreMap->print(std::cout);
-
-	//system("pause");
-	//return 0;
 	srand(timeGetTime());
 
 	Initialise(screenWidth, screenHeight, isFullscreen, (std::string("Space Tanker ") + std::string(VERSION)).c_str());
@@ -222,16 +203,14 @@ void Application::draw() {
 
 		if(maxSprintCooldown > 0 && sprintCooldown > 1) {
 			float percent = (float)sprintCooldown / (float)maxSprintCooldown;
-			//I don't trust AIE DrawLine, seems semi-broken
 			DrawIO::drawLine(cameraX + 20.f, cameraY + screenHeight - 25.f, percent * (float)(screenWidth - 40), 20.f, 0.f, SColour(0xFFFF00FF));
 		}
 
-		int startCountdown = (int)roundf(this->startCountdown / (float)tickLimit);
+		int startCountdown = (int)Math::roundf(this->startCountdown / (float)tickLimit);
 		if(currentState == GAME) {
 			if(startCountdown > 0) {
 				char* cdownValue = new char[10];
 				_itoa_s(startCountdown, cdownValue, 10, 10);
-				//AIE DrawString coloring broken and not sizeable
 				DrawIO::drawString(cdownValue, (float)cameraX + screenWidth / 2 - 16, (float)cameraY + screenHeight / 2 - 16, 32.f, 32.f, 0.f, SColour(0x0000FFFF));
 			}
 
@@ -242,6 +221,8 @@ void Application::draw() {
 			DrawIO::drawString(std::string("Coins: ") + std::to_string(playerUpgrades->availableCoins), (float)cameraX + 226, (float)cameraY + screenHeight - 51, 32.f, 32.f, 0.f);
 			MoveSprite(getGameObjects()->coinsOwnedSprite, (float)cameraX + 215, (float)cameraY + screenHeight - 43);
 			DrawSprite(getGameObjects()->coinsOwnedSprite);
+
+			DrawIO::drawString(std::string("Score: ") + std::to_string(score), (float)cameraX + 10, (float)cameraY + 10, 32.f, 32.f, 0.f);
 		} else if(currentState == PAUSE) {
 			DrawIO::fillRect(cameraX + 0.f, cameraY + 0.f, (float)screenWidth, (float)screenHeight, 0.f, SColour(0x00000088));
 			DrawIO::drawString("Paused", (float)cameraX + screenWidth / 2.f - 96.f / 2.f, (float)cameraY + screenHeight / 2.f - 16.f, 32.f, 32.f, 0.f);
@@ -274,15 +255,51 @@ void Application::draw() {
 
 		break;
 	}
-	case GAME_OVER:
-		positionCamera(0, 0);
-		DrawIO::drawString("Game Over", (float)screenWidth / 2 - (9 * 8), (float)screenHeight / 2 - 16, 32.f, 32.f, 0.f);
+	case GAME_OVER: {
+						positionCamera(0, 0);
+						DrawIO::drawString("Game Over", (float)screenWidth / 2 - (9 * 8), 10.f, 32.f, 32.f, 0.f);
+						std::string playerScore = std::string("Score: ") + std::to_string(score);
+
+						DrawIO::drawString(playerScore, (float)screenWidth / 2 - (playerScore.length() * 8), (float)screenHeight / 2 - 70.f, 32.f, 32.f, 0.f);
+						if(earnedHighScore) {
+							DrawIO::drawString("New Highscore!", (float)screenWidth / 2 - (14 * 8), (float)screenHeight / 2 - 30.f, 32.f, 32.f, 0.f);
+							DrawIO::drawString("Enter name below(3 characters max)", (float)screenWidth / 2 - (34 * 4), (float)screenHeight / 2, 16.f, 16.f, 0.f);
+							DrawIO::drawLine((float)screenWidth / 2 - 30, (float)screenHeight / 2 + 40.f, 16.f, 1.f, 0.f);
+							DrawIO::drawLine((float)screenWidth / 2 - 10, (float)screenHeight / 2 + 40.f, 16.f, 1.f, 0.f);
+							DrawIO::drawLine((float)screenWidth / 2 + 10, (float)screenHeight / 2 + 40.f, 16.f, 1.f, 0.f);
+							DrawIO::drawString(enteredName, (float)screenWidth / 2 - 36, (float)screenHeight / 2 + 13.f, 32.f, 32.f, 3.f);
+						}
+
+						DrawIO::fillRect((float)screenWidth / 2 - 200.f / 2, (float)screenHeight / 2 + 60.f, 200.f, 40.f, 0.f);
+						DrawIO::drawString("OK", screenWidth / 2 - 200.f / 2 + (200.f / 2 - 32.f * 3.f / 4), (float)screenHeight / 2 + 55.f + (32.f / 4), 32.f, 32.f, 0.f);
+
+						break;
+	}
+	case HSCORES:
+		DrawIO::drawString("High Scores", (float)screenWidth / 2 - (32 * 11) / 4, 10.f, 32.f, 32.f, 0.f);
+		int dY = 70;
+		for(unsigned int i = 0; i < 10; i++) {
+			SColour sc = i == scoreboard_selectedScore ? SColour(0x00FF00FF) : SColour(0xFFFFFFFF);
+			std::string score = scoreTable->scoreMap->getValues()->at(i);
+			int dots = 17 - score.length();
+			char* c_dots = new char[dots + 1];
+			for(int j = 0; j < dots; j++) {
+				c_dots[j] = '.';
+			}
+			c_dots[dots] = '\0';
+			DrawIO::drawString(std::to_string(i + 1) + std::string(". ") + (i < 9 ? std::string(" ") : std::string()) + String::replaceChar(std::string(scoreTable->scoreMap->getKeys()->at(i)), ' ', '.') + std::string(c_dots) + score, 62.f, (float)dY, 32.f, 32.f, 5.f, sc);
+			dY += 33;
+			delete c_dots;
+		}
+
+		DrawIO::fillRect((float)screenWidth / 2 - 200.f / 2, (float)screenHeight - 50.f, 200.f, 40.f, 0.f);
+		DrawIO::drawString("OK", screenWidth / 2 - 200.f / 2 + (200.f / 2 - 32.f * 3.f / 4), (float)screenHeight - 55.f + (32.f / 4), 32.f, 32.f, 0.f);
 		break;
 	}
 
-	//Since this is temporary anyway, no need to decrease my performance further by using a DrawIO function
-	//DrawIO::drawString(std::string("FPS: " + std::to_string(fps) + std::string(" TPS: ") + std::to_string(tps)), cameraX + 10, cameraY + 10, 32, 32, 0);
-	DrawString(std::string(std::string("FPS: ") + std::to_string(fps) + std::string(" TPS: ") + std::to_string(tps)).c_str(), cameraX + 10, cameraY + 10);
+	if(debugMode) {
+		DrawString(std::string(std::string("FPS: ") + std::to_string(fps) + std::string(" TPS: ") + std::to_string(tps)).c_str(), cameraX + 10, cameraY + 10);
+	}
 
 	MoveCamera((float)cameraX, (float)cameraY);
 
@@ -455,13 +472,25 @@ void Application::clearPlanets() {
 
 void Application::endGame() {
 	BASS_ChannelStop(gameObjects->backgroundLoop);
+	BASS_ChannelPlay(gameObjects->menuSound, true);
 	clearDrawables();
 	clearPlanets();
 
+	enteredName[0] = enteredName[1] = enteredName[2] = ' ';
+	enteredName[3] = '\0';
+	nameIndex = 0;
+
+	currentState = GAME_OVER;
+	scoreboard_selectedScore = -1;
+
+	earnedHighScore = checkHighScore();
+}
+
+bool Application::checkHighScore() {
 	if(scoreTable->isHighScore(score)) {
-		//Open the high score name enter state
+		return true;
 	} else {
-		//Open the game over high score display state
+		return false;
 	}
 }
 
@@ -492,6 +521,7 @@ void Application::init() {
 	getGameObjects()->stars = CreateSprite("./images/stars.png", WORLD_WIDTH, WORLD_HEIGHT, false);
 
 	//Call all the sound initialisation here
+	getGameObjects()->menuSound = BASS_StreamCreateFile(false, "./sounds/menu/menu_music1.ogg", 0, 0, BASS_SAMPLE_LOOP);
 	getGameObjects()->laserFireSound = BASS_StreamCreateFile(false, "./sounds/fire_laser.wav", 0, 0, 0);
 	getGameObjects()->speedUpSound = BASS_StreamCreateFile(false, "./sounds/speedup.wav", 0, 0, 0);
 	BASS_ChannelSetAttribute(getGameObjects()->speedUpSound, BASS_ATTRIB_VOL, 0.50F);
@@ -570,6 +600,9 @@ void Application::initGame() {
 	playerUpgrades = pl->getUpgrades();
 	addDrawable(pl);
 
+	score = 0;
+	playerUpgrades->availableCoins = 0;
+
 	generatePlanets();
 
 	BASS_ChannelSetAttribute(getGameObjects()->backgroundLoop, BASS_ATTRIB_VOL, 0.15F);
@@ -597,11 +630,23 @@ int Application::updateGame() {
 		key_cTickDown = 0;
 	}
 
+	static int key_debugTickDown;
+	if(IsKeyDown(KEY_F3)) {
+		if(key_debugTickDown == 1) {
+			debugMode = !debugMode;
+		}
+
+		key_debugTickDown++;
+	} else {
+		key_debugTickDown = 0;
+	}
+
 	int mouseX, mouseY;
 	GetMouseLocation(mouseX, mouseY);
 
 	switch(currentState) {
 	case SPLASH:{
+					BASS_ChannelPlay(getGameObjects()->menuSound, false);
 					static unsigned int ticks;
 
 					if(ticks >= 240) {
@@ -638,6 +683,7 @@ int Application::updateGame() {
 	case TUTORIAL:
 		if(mouseDown && !mouseDownLast) {
 			if(mouseX > screenWidth / 2 - 100 && mouseX < screenWidth / 2 + 100 && mouseY > screenHeight / 2 - 30 + 8 && mouseY < screenHeight / 2 + 30 + 8) {
+				BASS_ChannelStop(getGameObjects()->menuSound);
 				currentState = LOADING;
 			}
 		}
@@ -773,7 +819,6 @@ int Application::updateGame() {
 
 									if(upgradeLevel == &playerUpgrades->maxHealth) {
 										playerUpgrades->healthAdded = playerUpgrades->calculateMaxHealth() - playerUpgrades->calculateMaxHealth(*upgradeLevel - 1);
-										std::cout << "Adding " << playerUpgrades->healthAdded << "health..." << std::endl;
 									}
 								}
 							}
@@ -793,6 +838,46 @@ int Application::updateGame() {
 			BASS_Start();
 		}
 
+		break;
+	case GAME_OVER:
+		if(earnedHighScore) {
+			int key = Input::getNewPressedKey(Input::typekit, '\0');
+			DrawIO::fillRect((float)screenWidth / 2 - 200.f / 2, (float)screenHeight / 2 + 60.f, 200.f, 40.f, 0.f);
+			if(mouseDown && !mouseDownLast) {
+				if(mouseX > screenWidth / 2 - 200.f / 2 && mouseY > screenHeight / 2 + 60.f && mouseX < screenWidth / 2 - 200.f / 2 + 200.f && mouseY < screenHeight / 2 + 60.f + 40.f) {
+					if(nameIndex > 0 && nameIndex <= 3) {
+						scoreTable->putScore(enteredName, score);
+						scoreTable->save();
+						scoreboard_selectedScore = scoreTable->findScore(std::string(enteredName));
+						currentState = HSCORES;
+					}
+				}
+			}
+
+			if(key >= 'A' && key <= 'Z' && nameIndex < 3) {
+				enteredName[nameIndex] = (char)key;
+				nameIndex++;
+			} else if(key == KEY_BACKSPACE && nameIndex > 0) {
+				enteredName[nameIndex - 1] = ' ';
+				nameIndex--;
+			}
+		} else {
+			if(mouseDown && !mouseDownLast) {
+				if(mouseX > screenWidth / 2 - 200.f / 2 && mouseY > screenHeight / 2 + 60.f && mouseX < screenWidth / 2 - 200.f / 2 + 200.f && mouseY < screenHeight / 2 + 60.f + 40.f) {
+					scoreboard_selectedScore = -1;
+					currentState = HSCORES;
+				}
+			}
+		}
+		break;
+	case HSCORES:
+		if(mouseDown && !mouseDownLast) {
+			if(mouseX > screenWidth / 2 - 200.f / 2 && mouseY > screenHeight - 50.f && mouseX < screenWidth / 2 - 200.f / 2 + 200.f && mouseY < screenHeight - 50.f + 40.f) {
+				scoreboard_selectedScore = -1;
+				earnedHighScore = false;
+				currentState = MAIN_MENU;
+			}
+		}
 		break;
 	}
 

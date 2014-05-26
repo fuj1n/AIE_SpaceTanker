@@ -1,7 +1,9 @@
-#include "Player.h"
+#include "Player.hpp"
 #include "Utils.cpp"
 
 Player::Player(SPRITE sprite) {
+	upgrades = new PlayerUpgrades();
+
 	scale = 2;
 	width = height = 64;
 	float w = 64 * scale, h = 64 * scale;
@@ -18,7 +20,6 @@ Player::Player(SPRITE sprite) {
 	MoveSprite(texture, x, y);
 	getApplication()->maxSprintCooldown = maxSprintTime;
 	getApplication()->sprintCooldown = (int)sprintCooldown;
-	upgrades->availableCoins = 5000;
 }
 
 SPRITE Player::getTexture() {

@@ -1,4 +1,4 @@
-#include "Planet.h"
+#include "Planet.hpp"
 
 Planet::Planet(const char* textureName, int x, int y, int bounds) {
 	texture = CreateSprite(textureName, bounds, bounds, false, SColour(0xFFFFFF77));

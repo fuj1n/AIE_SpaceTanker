@@ -1,7 +1,7 @@
-#include "Enemy.h"
+#include "Enemy.hpp"
 
 #include "Utils.cpp"
-#include "Powerup.h"
+#include "Powerup.hpp"
 
 Enemy::Enemy(SPRITE sprite, SPRITE explosionSprites[], int x, int y, float rotation, float speed, float scale, float explosionScale, int followRange) {
 	width = height = 64;
@@ -20,6 +20,7 @@ Enemy::Enemy(SPRITE sprite, SPRITE explosionSprites[], int x, int y, float rotat
 	this->currentRotation = this->rotation;
 	this->speed = speed;
 	this->scale = (float)scale;
+	this->dropCoins = false;
 
 	SetSpriteScale(texture, width, height);
 	MoveSprite(texture, this->x, this->y);
@@ -37,8 +38,8 @@ Enemy::Enemy(SPRITE sprite, SPRITE explosionSprites[], int x, int y, float rotat
 
 void Enemy::update() {
 	if(!isAlive && isDead) {
-		if(Random::random(0, 52) != 0) {
-			getApplication()->addDrawable(new Powerup("coins", getApplication()->getGameObjects()->coinsSprite, (int)x, (int)y, (int)(30 * getApplication()->getTickLimit())));
+		if(dropCoins && Random::random(0, 52) != 0) {
+			getApplication()->addDrawable(new Powerup("coins", getApplication()->getGameObjects()->coinsSprite, (int)x - getWidth() / 2, (int)y - getHeight() / 2, (int)(30 * getApplication()->getTickLimit())));
 		}
 		getApplication()->removeDrawable(this);
 		return;
@@ -144,18 +145,21 @@ void Enemy::onCollide(ICollidable* col) {
 		if(isAlive) {
 			col->onTesterMessage(this);
 			BASS_ChannelPlay(getApplication()->getGameObjects()->explosionSound, true);
+
+			isAlive = false;
+			isDead = false;
+			dropCoins = true;
 		}
-		isAlive = false;
-		isDead = false;
 	}
 }
 
 void Enemy::onTesterMessage(ICollidable* col) {
 	if(isAlive) {
 		BASS_ChannelPlay(getApplication()->getGameObjects()->explosionSound, true);
+
+		isAlive = false;
+		isDead = false;
 	}
-	isAlive = false;
-	isDead = false;
 }
 
 std::string Enemy::getColliderName() {

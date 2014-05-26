@@ -1,6 +1,7 @@
 #include "AIE.h"
 #include "CharSpriteUtils.cpp"
-#include "WorldData.h"
+#include "WorldData.hpp"
+#include "PrimitiveClasses.cpp"
 #include <random>
 #include <vector>
 #include <string>
@@ -13,6 +14,10 @@
 
 namespace {
 	template <class kty, class vty>
+	/*
+	A simplified version of a hashmap
+	Note: does not work well with primitive types, use PrimitiveClasses.cpp instead
+	*/
 	class SimplifiedHashmap {
 	public:
 		typedef kty keyType;
@@ -32,7 +37,7 @@ namespace {
 			int vecID = getElementID(key);
 
 			if(vecID < 0) {
-				return 0;
+				return NULL;
 			} else {
 				return values->at(vecID);
 			}
@@ -137,6 +142,11 @@ namespace {
 			return false;
 		}
 
+		//friend std::ostream& operator<<(std::ostream& stream, const SimplifiedHashmap& shmp) {
+		//	shmp.print(stream);
+		//	return stream;
+		//}
+
 		void print(std::ostream& stream) {
 			for(unsigned int i = 0; i < this->size(); i++) {
 				stream << getKeys()->at(i) << " : " << getValues()->at(i) << std::endl;
@@ -155,6 +165,50 @@ namespace {
 			return temp;
 		}
 	};
+
+	namespace Input {
+		SimplifiedHashmap<Integer, Boolean> keys = SimplifiedHashmap<Integer, Boolean>();
+		int alphabet[26];
+		int typekit[28];
+
+		void fillDefaults() {
+			int realIndex = 0;
+			for(unsigned int i = 'A'; i <= 'Z'; i++) {
+				alphabet[realIndex] = i;
+				typekit[realIndex] = i;
+				realIndex++;
+			}
+			typekit[26] = KEY_BACKSPACE;
+			typekit[27] = KEY_SPACE;
+		}
+
+		int count(int* keyCodes) {
+			int count = 0;
+			int key = keyCodes[count];
+			while(key != '\0') {
+				count++;
+				key = keyCodes[count];
+			}
+			return count;
+		}
+
+		int getNewPressedKey(int* keyCodes...) {
+			unsigned int size = count(keyCodes);
+			for(unsigned int i = 0; i < size; i++) {
+				if(!IsKeyDown(keyCodes[i])) {
+					keys.put(keyCodes[i], false);
+				}
+			}
+
+			for(unsigned int i = 0; i < size; i++) {
+				if(IsKeyDown(keyCodes[i]) && (!keys.containsKey(keyCodes[i]) || keys.get(keyCodes[i]) == false)) {
+					keys.put(keyCodes[i], true);
+					return keyCodes[i];
+				}
+			}
+			return 0;
+		}
+	}
 
 	namespace WindowUtils {
 		void getScreenSize(int &width, int &height) {
@@ -175,6 +229,19 @@ namespace {
 
 			width = window.right;
 			height = window.bottom;
+		}
+	}
+
+	namespace ConversionIO {
+		LPCWSTR to_lpcwstr(const std::string s) {
+			int len;
+			int slength = (int)s.length() + 1;
+			len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
+			wchar_t* buf = new wchar_t[len];
+			MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
+			std::wstring r(buf);
+			delete[] buf;
+			return r.c_str();
 		}
 	}
 
@@ -373,6 +440,24 @@ namespace {
 
 			return l;
 		}
+
+		float roundf(float x) {
+			return x >= 0.0f ? floorf(x + 0.5f) : ceilf(x - 0.5f);
+		}
+
+		int countNumbers(double i) {
+			std::string str = std::to_string(i);
+
+			return str.length();
+		}
+
+		int countNumbers(float i) {
+			return countNumbers((double)i);
+		}
+
+		int countNumbers(int i) {
+			return countNumbers((double)i);
+		}
 	}
 
 	namespace DrawIO {
@@ -425,21 +510,23 @@ namespace {
 
 			for(unsigned int i = 0; i < s.length(); i++) {
 				char c = s.c_str()[i];
-				int sX, sY;
-				if(c != ' ') {
-					getCharPosition(c, sX, sY);
-					if(sX == 0 && sY == 0 && useDefaultForUnknown) {
-						DrawString(&c, (int)cX, (int)cY, color);
-					} else {
-						SPRITE spr = getCharSprite(textSheet, sX, sY);
-						SetSpriteScale(spr, width, height);
-						SetSpriteColour(spr, color);
-						MoveSprite(spr, cX, cY);
-						DrawSprite(spr);
-						destroyQueue.push_back(spr);
+				if(c != '\0') {
+					int sX, sY;
+					if(c != ' ') {
+						getCharPosition(c, sX, sY);
+						if(sX == 0 && sY == 0 && useDefaultForUnknown) {
+							DrawString(&c, (int)cX, (int)cY, color);
+						} else {
+							SPRITE spr = getCharSprite(textSheet, sX, sY);
+							SetSpriteScale(spr, width, height);
+							SetSpriteColour(spr, color);
+							MoveSprite(spr, cX, cY);
+							DrawSprite(spr);
+							destroyQueue.push_back(spr);
+						}
 					}
+					cX += (width / 2) + spacing;
 				}
-				cX += (width / 2) + spacing;
 			}
 		}
 
@@ -504,6 +591,18 @@ namespace {
 			} else {
 				std::cout << "Error, access to file " << file << " is denied or the file doesn't exist" << std::endl;
 			}
+		}
+	}
+
+	namespace String {
+		std::string replaceChar(std::string str, char ch1, char ch2) {
+			for(unsigned int i = 0; i < str.length(); ++i) {
+				if(str[i] == ch1) {
+					str[i] = ch2;
+				}
+			}
+
+			return str;
 		}
 	}
 

@@ -1,59 +1,78 @@
-#include "ScoreTable.h"
+#include "ScoreTable.hpp"
 #include <direct.h>
 
-static const char* KEY = "NOT_REVEALED";
+//Since there is no more encryption, no point keeping the key secret
+static const char* KEY = "\u00A7CD";
 
-ScoreTable::ScoreTable(){
+ScoreTable::ScoreTable() {
 	scoreMap = new SimplifiedHashmap<std::string, std::string>();
 }
 
-void ScoreTable::load(){
+void ScoreTable::load() {
 	scoreMap->clear();
 	FileIO::read("data/scores.data", scoreMap);
-	scoreMap = Crypt::encryptDecryptMap<std::string, std::string>(KEY, scoreMap);
+	//scoreMap = Crypt::encryptDecryptMap<std::string, std::string>(KEY, scoreMap);
+
+	if(scoreMap->isEmpty()) {
+		defaults();
+		save();
+	}
 }
 
-void ScoreTable::save(){
-	if(!scoreMap->isEmpty()){
+void ScoreTable::save() {
+	if(!scoreMap->isEmpty()) {
 		_mkdir("data");
 
-		SimplifiedHashmap<std::string, std::string>* cryptMap = Crypt::encryptDecryptMap<std::string, std::string>(KEY, scoreMap);
+		//SimplifiedHashmap<std::string, std::string>* cryptMap = Crypt::encryptDecryptMap<std::string, std::string>(KEY, scoreMap);
 
-		FileIO::write("data/scores.data", cryptMap);
+		FileIO::write("data/scores.data", scoreMap);
 		load();
 		sort();
 	}
 }
 
-bool ScoreTable::isHighScore(unsigned long long score){
-	if(scoreMap->size() < 10){
+void ScoreTable::defaults() {
+	putScore("OKU", 10000);
+	putScore("ADU", 8000);
+	putScore("DW ", 6000);
+	putScore("MIK", 5000);
+	putScore("AMN", 4000);
+	putScore("FOR", 4500);
+	putScore("FUJ", 4000);
+	putScore("CH ", 3500);
+	putScore("MYR", 3000);
+	putScore("ABS", 2500);
+}
+
+bool ScoreTable::isHighScore(unsigned long long score) {
+	if(scoreMap->size() < 10) {
 		return true;
 	}
 
 	unsigned long long lowestScore = -1;
-	for(unsigned int i = 0; i < scoreMap->size(); i++){
+	for(unsigned int i = 0; i < scoreMap->size(); i++) {
 		std::string::size_type s_size = 0;
 		unsigned long long ll_score = std::stoull(scoreMap->getValues()->at(i), &s_size, 10);
-		
-		if(ll_score < lowestScore){
+
+		if(ll_score < lowestScore) {
 			lowestScore = ll_score;
 		}
 	}
 
-	if(score > lowestScore){
+	if(score > lowestScore) {
 		return true;
 	}
 
 	return false;
 }
 
-void ScoreTable::putScore(char name[3], unsigned long long score){
-	if(isHighScore(score)){
+void ScoreTable::putScore(char name[4], unsigned long long score) {
+	if(isHighScore(score)) {
 		//Ensures the name is not going to be overridden unless actually a higher score
-		if(scoreMap->containsKey(std::string(name))){
+		if(scoreMap->containsKey(std::string(name))) {
 			std::string::size_type s_size = 0;
 			unsigned long long ll_score = std::stoull(scoreMap->get(std::string(name)), &s_size, 10);
-			if(ll_score >= score){
+			if(ll_score >= score) {
 				return;
 			}
 		}
@@ -62,31 +81,35 @@ void ScoreTable::putScore(char name[3], unsigned long long score){
 	}
 }
 
-void ScoreTable::removeScore(char name[3]){
+void ScoreTable::removeScore(char name[4]) {
 	scoreMap->remove(std::string(name));
 	sort();
+}
+
+int ScoreTable::findScore(std::string str) {
+	return scoreMap->getElementID(str);
 }
 
 /*Requirements for sort:
 - Sort by value
 - Remove extra elements(limit to 10)
 */
-void ScoreTable::sort(){
-	if(scoreMap->isEmpty()){
+void ScoreTable::sort() {
+	if(scoreMap->isEmpty()) {
 		return;
 	}
 
 	SimplifiedHashmap<std::string, std::string>* sortedHash = new SimplifiedHashmap<std::string, std::string>();
 
-	while(!scoreMap->isEmpty()){
+	while(!scoreMap->isEmpty()) {
 		unsigned long long highestScore = 0;
 		std::string highestScoreKey;
 
-		for(unsigned int i = 0; i < scoreMap->size(); i++){
+		for(unsigned int i = 0; i < scoreMap->size(); i++) {
 			std::string::size_type s_size = 0;
 			unsigned long long ll_score = std::stoull(scoreMap->getValues()->at(i), &s_size, 10);
 
-			if(ll_score > highestScore){
+			if(ll_score > highestScore) {
 				highestScore = ll_score;
 				highestScoreKey = scoreMap->getKeys()->at(i);
 			}
@@ -96,8 +119,8 @@ void ScoreTable::sort(){
 		scoreMap->remove(highestScoreKey);
 	}
 
-	if(sortedHash->size() > 10){
-		while(sortedHash->size() != 10){
+	if(sortedHash->size() > 10) {
+		while(sortedHash->size() != 10) {
 			sortedHash->remove(sortedHash->getKeys()->at(sortedHash->size() - 1));
 		}
 	}

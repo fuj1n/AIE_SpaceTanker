@@ -1,9 +1,10 @@
-#include "Powerup.h"
+#include "Powerup.hpp"
 
 Powerup::Powerup(char* type, SPRITE sprite, int x, int y, int stayTime) {
 	width = height = 64;
 	powerupType = type;
 	texture = DuplicateSprite(sprite);
+	MoveSprite(texture, (float)x, (float)y);
 	SetSpriteScale(texture, width, height);
 	this->x = x;
 	this->y = y;
