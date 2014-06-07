@@ -5,8 +5,6 @@
 #include <iostream>
 #include <windows.h>
 
-#define DEBUG TRUE
-
 int retAns = -1337;
 
 //TL;DR
@@ -46,7 +44,7 @@ long __stdcall WindowProcedure(HWND window, unsigned int msg, WPARAM wp, LPARAM 
 }
 
 int main(int argc, char* argv[]) {
-	if(!DEBUG) {
+	if(!isDebug()) {
 		ShowWindow(GetConsoleWindow(), SW_HIDE);
 	}
 
@@ -63,12 +61,12 @@ int main(int argc, char* argv[]) {
 	const char* const myclass = "fuj1n.spacetanker.wrapper";
 	WNDCLASSEX wndclass = {sizeof(WNDCLASSEX), CS_DBLCLKS, WindowProcedure, 0, 0, GetModuleHandle(0), LoadIcon(0, IDI_APPLICATION), LoadCursor(0, IDC_ARROW), HBRUSH(RGB(0, 0, 0)), 0, myclass, LoadIcon(0, IDI_APPLICATION)};
 	if(RegisterClassEx(&wndclass)) {
-		HWND window = CreateWindowEx(0, myclass, "Space Tanker Wrapper", WS_OVERLAPPEDWINDOW, screenW / 2 - 210 / 2, screenH / 2 - 115 / 2, 210, 115, 0, 0, GetModuleHandle(0), 0);
+		HWND window = CreateWindowEx(WS_EX_PALETTEWINDOW | WS_THICKFRAME, myclass, "Space Tanker Wrapper", WS_OVERLAPPEDWINDOW, screenW / 2 - 210 / 2, screenH / 2 - 115 / 2, 210, 115, 0, 0, GetModuleHandle(0), 0);
 		if(window) {
 			ShowWindow(window, SW_SHOWDEFAULT);
 			MSG msg;
 			while(GetMessage(&msg, 0, 0, 0) && retAns != 1 && retAns != 0) DispatchMessage(&msg);
-			CloseWindow(window);
+			ShowWindow(window, SW_HIDE);
 		}
 	}
 

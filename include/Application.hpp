@@ -1,3 +1,5 @@
+#define DEBUG true
+
 #include "IDrawable.hpp"
 #include "AIE.h"
 #include "GameObjects.hpp"
@@ -20,7 +22,7 @@
 #pragma once
 
 static const char* GAME_NAME = "Space Tanker";
-static const char* VERSION = "v0.6";
+static const char* VERSION = "v0.9";
 static const bool gameRendersThroughPause = true;
 static const float startCountdownMax = 5.f;
 static bool debugMode = false;
@@ -28,6 +30,10 @@ static HANDLE processHandle;
 static HWND windowHandle;
 
 namespace {
+	bool isDebug() {
+		return DEBUG;
+	}
+
 	enum States {
 		SPLASH,
 		MAIN_MENU,
@@ -98,12 +104,19 @@ private:
 
 	int cameraX, cameraY;
 
+	int numEnemies;
+
+	int enemySpawnEase;
+	int enemySpawnerIndex;
+
 	unsigned long long score;
 	int scoreboard_selectedScore;
 	bool earnedHighScore;
 
 	char enteredName[4];
 	int nameIndex;
+
+	int eortt;
 
 	ScoreTable* scoreTable;
 
@@ -148,6 +161,9 @@ public:
 
 	void endGame();
 	bool checkHighScore();
+
+	int getEnemyCount();
+	int getSpawnEase();
 
 	//GUI variables(purposely public)
 	int sprintCooldown;

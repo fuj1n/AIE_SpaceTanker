@@ -4,6 +4,7 @@
 #include "Planet.hpp"
 #include "Player.hpp"
 #include "Powerup.hpp"
+#include "EnemySpawner.hpp"
 #include "Utils.cpp"
 #include <array>
 
@@ -21,6 +22,8 @@ Application::Application(int screenWidth, int screenHeight, bool isFullscreen) {
 	this->tps = 0;
 
 	earnedHighScore = false;
+
+	enemySpawnEase = 128;
 
 	Input::fillDefaults();
 }
@@ -208,6 +211,10 @@ void Application::draw() {
 
 		int startCountdown = (int)Math::roundf(this->startCountdown / (float)tickLimit);
 		if(currentState == GAME) {
+			if(eortt > 0) {
+				DrawIO::drawString("Enemy Wave", cameraX + (float)screenWidth - 190.f, cameraY + 10.f, 32.f, 32.f, 0.f);
+			}
+
 			if(startCountdown > 0) {
 				char* cdownValue = new char[10];
 				_itoa_s(startCountdown, cdownValue, 10, 10);
@@ -292,8 +299,11 @@ void Application::draw() {
 			delete c_dots;
 		}
 
-		DrawIO::fillRect((float)screenWidth / 2 - 200.f / 2, (float)screenHeight - 50.f, 200.f, 40.f, 0.f);
-		DrawIO::drawString("OK", screenWidth / 2 - 200.f / 2 + (200.f / 2 - 32.f * 3.f / 4), (float)screenHeight - 55.f + (32.f / 4), 32.f, 32.f, 0.f);
+		DrawIO::fillRect((float)screenWidth / 2 - 200.f / 2, (float)screenHeight - 50.f, 98.f, 40.f, 0.f);
+		DrawIO::drawString("OK", screenWidth / 2 - 100.f / 2 + (100.f / 2 - 32.f * 3.f / 4) - 52.f, (float)screenHeight - 55.f + (32.f / 4), 32.f, 32.f, 0.f);
+
+		DrawIO::fillRect((float)screenWidth / 2 - 200.f / 2 + 102.f, (float)screenHeight - 50.f, 98.f, 40.f, 0.f);
+		DrawIO::drawString("Reset", screenWidth / 2 - 100.f / 2 + (100.f / 2 - 80.f * 3.f / 4) + 62.f, (float)screenHeight - 55.f + (32.f / 4), 32.f, 32.f, 0.f);
 		break;
 	}
 
@@ -565,6 +575,7 @@ void Application::preloadGame() {
 	getGameObjects()->healthPowerUpSprite = CreateSprite("./images/healthkit.png", 128, 128, false);
 	getGameObjects()->playerSprite = CreateSprite("./images/tanker.png", 64, 64, true);
 	getGameObjects()->enemySprite = CreateSprite("./images/enemy.png", 64, 64, true);
+	getGameObjects()->enemySpawnerSprite = CreateSprite("./images/enemyspawner.png", 64, 64, false);
 	getGameObjects()->healthRemainSprite = DuplicateSprite(getGameObjects()->healthPowerUpSprite);
 	getGameObjects()->coinsOwnedSprite = DuplicateSprite(getGameObjects()->coinsSprite);
 
@@ -695,7 +706,7 @@ int Application::updateGame() {
 					  startCountdown--;
 				  }
 				  int enemyCount = 0;
-				  //applyDifficulty();
+				  applyDifficulty();
 
 				  if(healthUpSpawn <= 0) {
 					  healthUpSpawn = healthUpFrequency;
@@ -709,6 +720,10 @@ int Application::updateGame() {
 					  if(Random::random(0, 2) != 0) {
 						  healthUpSpawn--;
 					  }
+				  }
+
+				  if(eortt > 0) {
+					  eortt--;
 				  }
 
 				  drawables.shrink_to_fit();
@@ -737,15 +752,13 @@ int Application::updateGame() {
 					  }
 				  }
 
-				  //enemy spawning limited to 100 enemies at a time
-				  if(enemyCount < 100 && startCountdown <= 0) {
-					  if(Random::random(0, 250) == 0) {
-						  int xPos = Random::random(0, WORLD_WIDTH);
-						  int yPos = Random::random(0, WORLD_HEIGHT);
-						  int followRange = Random::random(480, 640);
+				  numEnemies = enemyCount;
+				  if(startCountdown == 0) {
+					  startCountdown--;
 
-						  addDrawable(new Enemy(getGameObjects()->enemySprite, getGameObjects()->explosionSprites, xPos, yPos, ROT_EAST, 1.5f, 1.f, 1.5f, followRange));
-					  }
+					  addDrawable(new EnemySpawner(0, 0, 500, 5, 250, false, getGameObjects()->enemySpawnerSprite));
+					  addDrawable(new EnemySpawner(960 - 64, 960 - 64, 500, -250, -5, false, getGameObjects()->enemySpawnerSprite));
+					  enemySpawnerIndex = 1;
 				  }
 
 				  if(quitTickDown == 1) {
@@ -872,10 +885,14 @@ int Application::updateGame() {
 		break;
 	case HSCORES:
 		if(mouseDown && !mouseDownLast) {
-			if(mouseX > screenWidth / 2 - 200.f / 2 && mouseY > screenHeight - 50.f && mouseX < screenWidth / 2 - 200.f / 2 + 200.f && mouseY < screenHeight - 50.f + 40.f) {
+			if(mouseX > screenWidth / 2 - 200.f / 2 && mouseY > screenHeight - 50.f && mouseX < screenWidth / 2 - 200.f / 2 + 98.f && mouseY < screenHeight - 50.f + 40.f) {
 				scoreboard_selectedScore = -1;
 				earnedHighScore = false;
 				currentState = MAIN_MENU;
+			} else if(mouseX > screenWidth / 2 - 200.f / 2 + 102.f && mouseY > screenHeight - 50.f && mouseX < screenWidth / 2 - 200.f / 2 + 102.f + 98.f && mouseY < screenHeight - 50.f + 40.f) {
+				scoreboard_selectedScore = -1;
+				earnedHighScore = false;
+				scoreTable->defaults();
 			}
 		}
 		break;
@@ -887,9 +904,43 @@ int Application::updateGame() {
 }
 
 void Application::applyDifficulty() {
-	if(((int)gameTicks % (int)(15 * tickLimit)) == 0) {
+	if(((int)gameTicks % (int)(tickLimit) / 2) == 0) {
+		if(enemySpawnEase == 0) {
+			enemySpawnEase = 32.f;
+		}
+	}
+	if(((int)gameTicks % (int)(tickLimit * 2)) == 0) {
 		proceduralDifficulty += 0.1F;
 
-		healthUpFrequency *= (int)(proceduralDifficulty / 2);
+		healthUpFrequency += (int)(proceduralDifficulty / 2);
+
+		enemySpawnEase--;
+		if(enemySpawnEase <= 10 && enemySpawnEase != -1) {
+			enemySpawnEase = 0;
+			eortt = (int)tickLimit;
+		}
+		if(enemySpawnEase <= -1) {
+			enemySpawnEase = 32;
+
+			switch(enemySpawnerIndex) {
+			case 1:
+				addDrawable(new EnemySpawner(960 - 64, 0, 500, 5, 250, true, getGameObjects()->enemySpawnerSprite));
+				break;
+			case 2:
+				addDrawable(new EnemySpawner(0, 960 - 64, 500, -250, -5, true, getGameObjects()->enemySpawnerSprite));
+				break;
+			case 10:
+				enemySpawnerIndex = 1;
+			}
+			enemySpawnerIndex++;
+		}
 	}
+}
+
+int Application::getEnemyCount() {
+	return numEnemies;
+}
+
+int Application::getSpawnEase() {
+	return enemySpawnEase;
 }

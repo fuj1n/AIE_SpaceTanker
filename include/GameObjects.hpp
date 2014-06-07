@@ -40,6 +40,7 @@ public:
 	SPRITE coinsOwnedSprite;
 
 	SPRITE enemySprite;
+	SPRITE enemySpawnerSprite;
 
 	SPRITE explosionSprites[numExplosions];
 

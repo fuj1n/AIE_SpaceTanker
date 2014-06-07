@@ -32,6 +32,8 @@ void ScoreTable::save() {
 }
 
 void ScoreTable::defaults() {
+	scoreMap->clear();
+
 	putScore("OKU", 10000);
 	putScore("ADU", 8000);
 	putScore("DW ", 6000);

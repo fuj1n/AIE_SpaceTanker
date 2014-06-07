@@ -65,12 +65,12 @@ void Enemy::update() {
 	int xSide = 0, ySide = 0;
 
 	//Facing the player
-	if(getApplication()->getTrackTarget() != 0 && (getApplication()->getTrackTarget()->getTX() - x < followRange && getApplication()->getTrackTarget()->getTX() - x > -followRange) && (getApplication()->getTrackTarget()->getTY() - y < followRange && getApplication()->getTrackTarget()->getTY() - y > -followRange)) {
-		xSide = getApplication()->getTrackTarget()->getTX() < x ? -1 : getApplication()->getTrackTarget()->getTX() > x ? 1 : 0;
-		ySide = getApplication()->getTrackTarget()->getTY() < y ? -1 : getApplication()->getTrackTarget()->getTY() > y ? 1 : 0;
+	//if(getApplication()->getTrackTarget() != 0 && (getApplication()->getTrackTarget()->getTX() - x < followRange && getApplication()->getTrackTarget()->getTX() - x > -followRange) && (getApplication()->getTrackTarget()->getTY() - y < followRange && getApplication()->getTrackTarget()->getTY() - y > -followRange)) {
+	xSide = getApplication()->getTrackTarget()->getTX() < x ? -1 : getApplication()->getTrackTarget()->getTX() > x ? 1 : 0;
+	ySide = getApplication()->getTrackTarget()->getTY() < y ? -1 : getApplication()->getTrackTarget()->getTY() > y ? 1 : 0;
 
-		GameUtils::rotate(rotation, xSide, ySide);
-	}
+	GameUtils::rotate(rotation, xSide, ySide);
+	//}
 
 	GameUtils::currRotation(currentRotation, rotation);
 

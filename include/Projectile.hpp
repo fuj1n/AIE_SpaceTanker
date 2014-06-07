@@ -8,7 +8,7 @@
 class Projectile : public ICollidable, BaseClass {
 private:
 	float width, height;
-	int xDir, yDir, timeUntilDeath;
+	int xDir, yDir, pixelsTravellable;
 	boolean isSpecial;
 	float x, y, rotation, currentRotation, speed, scale;
 

@@ -12,7 +12,7 @@ Projectile::Projectile(SPRITE sprite, int x, int y, int xDir, int yDir, float ro
 	currentRotation = rotation;
 	this->speed = speed;
 	isSpecial = special;
-	timeUntilDeath = (int)(stayTime * getApplication()->getTickLimit());
+	pixelsTravellable = (int)(stayTime * getApplication()->getTickLimit());
 	texture = DuplicateSprite(sprite);
 	SetSpriteScale(texture, width, height);
 	SetSpriteColour(texture, color);
@@ -26,10 +26,15 @@ SPRITE Projectile::getTexture() {
 }
 
 void Projectile::update() {
-	timeUntilDeath--;
-
 	x += xDir * speed;
 	y += yDir * speed;
+	if(abs(xDir) > 0) {
+		pixelsTravellable -= (int)(abs(xDir) * speed);
+	} else if(abs(yDir) > 0) {
+		pixelsTravellable -= (int)(abs(yDir) * speed);
+	} else {
+		pixelsTravellable--;
+	}
 
 	for(int index = 0; index < 2; index++) {
 		if(currentRotation > rotation) {
@@ -42,7 +47,7 @@ void Projectile::update() {
 	RotateSprite(texture, currentRotation);
 	MoveSprite(texture, x, y);
 
-	if(timeUntilDeath <= 0) {
+	if(pixelsTravellable <= 0) {
 		getApplication()->removeDrawable(this);
 		return;
 	}
@@ -76,7 +81,7 @@ void Projectile::onCollide(ICollidable* col) {}
 
 void Projectile::onTesterMessage(ICollidable* col) {
 	if(!isSpecial) {
-		timeUntilDeath = 0;
+		pixelsTravellable = 0;
 	}
 
 	if(col->getColliderName() == "enemy") {
@@ -85,5 +90,5 @@ void Projectile::onTesterMessage(ICollidable* col) {
 }
 
 std::string Projectile::getColliderName() {
-	return std::string("bullet") + (timeUntilDeath <= 0 ? std::string("::dead") : std::string(""));
+	return std::string("bullet") + (pixelsTravellable <= 0 ? std::string("::dead") : std::string(""));
 }

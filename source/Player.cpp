@@ -100,7 +100,7 @@ void Player::update() {
 		if(projXDir != -1337 && projYDir != -1337) {
 			float speed, range;
 			speed = 4.5f * (upgrades->bulletSpeed * 0.5f);
-			range = 1.f * (upgrades->maxRange * 0.25f);
+			range = 1.f * ((upgrades->maxRange - 1) * 2 + 1);
 			Projectile* projectile = new Projectile(getApplication()->getGameObjects()->laserBeamSprite, projX, projY, projXDir, projYDir, rotation, speed, range, SColour(0xFFFF00FF), 25, false, this);
 			getApplication()->addDrawable(projectile);
 			BASS_ChannelPlay(getApplication()->getGameObjects()->laserFireSound, false);

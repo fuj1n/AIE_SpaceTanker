@@ -66,6 +66,5 @@ namespace {
 		//delete appl;
 
 		return exitCode;
-
 	}
 }

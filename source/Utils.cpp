@@ -458,6 +458,10 @@ namespace {
 		int countNumbers(int i) {
 			return countNumbers((double)i);
 		}
+
+		float dist(float x1, float y1, float  x2, float y2) {
+			return sqrtf(pow(x2 - x1, 2) + pow(y2 - y1, 2));
+		}
 	}
 
 	namespace DrawIO {
