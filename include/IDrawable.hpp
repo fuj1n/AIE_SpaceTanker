@@ -5,7 +5,9 @@
 
 class IParent {
 public:
-	virtual void onAction(int act) {}
+	virtual void onAction(int act) {
+		act;
+	}
 };
 
 class IMessageRecepient {

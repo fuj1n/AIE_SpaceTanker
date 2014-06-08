@@ -20,6 +20,8 @@ Player::Player(SPRITE sprite) {
 	MoveSprite(texture, x, y);
 	getApplication()->maxSprintCooldown = maxSprintTime;
 	getApplication()->sprintCooldown = (int)sprintCooldown;
+
+	shootCooldown = 0;
 }
 
 SPRITE Player::getTexture() {
@@ -90,9 +92,9 @@ void Player::update() {
 
 	speed += (upgrades->speed * 0.3f);
 
-	GameUtils::movePlayer(x, y, rotation, speed, IsKeyDown('w'), IsKeyDown('s'), IsKeyDown('a'), IsKeyDown('d'), width, height);
+	GameUtils::movePlayer(x, y, rotation, speed, IsKeyDown('W'), IsKeyDown('S'), IsKeyDown('A'), IsKeyDown('D'), width, height);
 
-	if(IsKeyDown(VK_SPACE) && shootCooldown <= 0) {
+	if(IsKeyDown(KEY_SPACE) && shootCooldown <= 0) {
 		int projXDir = -1337, projYDir = -1337, projX = (int)x, projY = (int)y;
 
 		GameUtils::getProjectilePropertyModifiers(rotation, projXDir, projYDir, projX, projY);
@@ -162,7 +164,9 @@ void Player::onCollide(ICollidable* col) {
 	}
 }
 
-void Player::onTesterMessage(ICollidable* col) {}
+void Player::onTesterMessage(ICollidable* col) {
+	col;
+}
 
 void Player::onAction(int act) {
 	switch(act) {

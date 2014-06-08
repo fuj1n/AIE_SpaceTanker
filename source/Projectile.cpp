@@ -77,7 +77,9 @@ bool Projectile::isCollideTester() {
 	return false;
 }
 
-void Projectile::onCollide(ICollidable* col) {}
+void Projectile::onCollide(ICollidable* col) {
+	col;
+}
 
 void Projectile::onTesterMessage(ICollidable* col) {
 	if(!isSpecial) {

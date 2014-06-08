@@ -302,32 +302,32 @@ namespace {
 		}
 
 		void movePlayer(float& x, float& y, float& rotation, float speed, bool wDown, bool sDown, bool aDown, bool dDown, int width, int height) {
-			if(IsKeyDown('W') && IsKeyDown('A')) {
+			if(wDown && aDown) {
 				rotation = ROT_NORTHWEST;
 				x -= 1 * speed;
 				y -= 1 * speed;
-			} else if(IsKeyDown('W') && IsKeyDown('D')) {
+			} else if(wDown && dDown) {
 				rotation = ROT_NORTHEAST;
 				x += 1 * speed;
 				y -= 1 * speed;
-			} else if(IsKeyDown('S') && IsKeyDown('A')) {
+			} else if(sDown && aDown) {
 				rotation = ROT_SOUTHWEST;
 				x -= 1 * speed;
 				y += 1 * speed;
-			} else if(IsKeyDown('S') && IsKeyDown('D')) {
+			} else if(sDown && dDown) {
 				rotation = ROT_SOUTHEAST;
 				x += 1 * speed;
 				y += 1 * speed;
-			} else if(IsKeyDown('W')) {
+			} else if(wDown) {
 				rotation = ROT_NORTH;
 				y -= 1 * speed;
-			} else if(IsKeyDown('S')) {
+			} else if(sDown) {
 				rotation = ROT_SOUTH;
 				y += 1 * speed;
-			} else if(IsKeyDown('A')) {
+			} else if(aDown) {
 				rotation = ROT_WEST;
 				x -= 1 * speed;
-			} else if(IsKeyDown('D')) {
+			} else if(dDown) {
 				rotation = ROT_EAST;
 				x += 1 * speed;
 			}
@@ -346,13 +346,23 @@ namespace {
 		}
 
 		void move(int& x, int& y, int xDirection, int yDirection, float speed, bool boundsCheck = false, int width = 0, int height = 0) {
-			x += (int)(xDirection * speed);
-			y += (int)(yDirection * speed);
+			if(!boundsCheck || ((x + (int)(xDirection * speed)) > 0 && (x + (int)(xDirection * speed)) < WORLD_WIDTH - width / 2)) {
+				x += (int)(xDirection * speed);
+			}
+
+			if(!boundsCheck || ((y + (int)(yDirection * speed)) > 0 && (y + (int)(yDirection * speed)) < WORLD_HEIGHT - height / 2)) {
+				y += (int)(yDirection * speed);
+			}
 		}
 
 		void move(float& x, float& y, int xDirection, int yDirection, float speed, bool boundsCheck = false, int width = 0, int height = 0) {
-			x += xDirection * speed;
-			y += yDirection * speed;
+			if(!boundsCheck || ((x + xDirection * speed) > 0 && (x + xDirection * speed) < WORLD_WIDTH - width / 2)) {
+				x += (int)(xDirection * speed);
+			}
+
+			if(!boundsCheck || ((y + yDirection * speed) > 0 && (y + yDirection * speed) < WORLD_HEIGHT - height / 2)) {
+				y += (int)(yDirection * speed);
+			}
 		}
 
 		void rotate(float& rotation, int xSide, int ySide) {
@@ -607,29 +617,6 @@ namespace {
 			}
 
 			return str;
-		}
-	}
-
-	namespace Crypt {
-		std::string encryptDecrypt(const char* key, std::string crypt) {
-			std::string output = crypt;
-
-			for(unsigned int i = 0; i < crypt.size(); i++)
-				output[i] = crypt[i] ^ key[i % (sizeof(key) / sizeof(char))];
-
-			return output;
-		}
-
-		template<class keyType, class valueType>
-		SimplifiedHashmap<keyType, valueType>* encryptDecryptMap(const char* key, SimplifiedHashmap<keyType, valueType>* source) {
-			SimplifiedHashmap<keyType, valueType>* temp = source->clone();
-
-			for(unsigned int i = 0; i < temp->size(); i++) {
-				temp->getKeys()->at(i) = encryptDecrypt(key, temp->getKeys()->at(i));
-				temp->getValues()->at(i) = encryptDecrypt(key, temp->getValues()->at(i));
-			}
-
-			return temp;
 		}
 	}
 }

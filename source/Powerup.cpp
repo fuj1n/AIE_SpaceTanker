@@ -48,9 +48,12 @@ bool Powerup::isCollideTester() {
 	return false;
 }
 
-void Powerup::onCollide(ICollidable* col) {}
+void Powerup::onCollide(ICollidable* col) {
+	col;
+}
 
 void Powerup::onTesterMessage(ICollidable* col) {
+	col;
 	timeLeft = 0;
 }
 

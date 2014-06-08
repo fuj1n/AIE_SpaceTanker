@@ -21,7 +21,8 @@ void ScoreTable::load() {
 
 void ScoreTable::save() {
 	if(!scoreMap->isEmpty()) {
-		_mkdir("data");
+		if(_mkdir("data") == NULL && false)
+			return;
 
 		//SimplifiedHashmap<std::string, std::string>* cryptMap = Crypt::encryptDecryptMap<std::string, std::string>(KEY, scoreMap);
 
@@ -51,7 +52,7 @@ bool ScoreTable::isHighScore(unsigned long long score) {
 		return true;
 	}
 
-	unsigned long long lowestScore = -1;
+	unsigned long long lowestScore = (unsigned long long) - 1;
 	for(unsigned int i = 0; i < scoreMap->size(); i++) {
 		std::string::size_type s_size = 0;
 		unsigned long long ll_score = std::stoull(scoreMap->getValues()->at(i), &s_size, 10);

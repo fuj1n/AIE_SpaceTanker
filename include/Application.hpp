@@ -1,4 +1,4 @@
-#define DEBUG true
+#define DEBUG false
 
 #include "IDrawable.hpp"
 #include "AIE.h"
@@ -22,7 +22,7 @@
 #pragma once
 
 static const char* GAME_NAME = "Space Tanker";
-static const char* VERSION = "v1.0";
+static const char* VERSION = "v1.0.1";
 static const bool gameRendersThroughPause = true;
 static const float startCountdownMax = 5.f;
 static bool debugMode = false;

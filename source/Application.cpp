@@ -286,7 +286,7 @@ void Application::draw() {
 		DrawIO::drawString("High Scores", (float)screenWidth / 2 - (32 * 11) / 4, 10.f, 32.f, 32.f, 0.f);
 		int dY = 70;
 		for(unsigned int i = 0; i < 10; i++) {
-			SColour sc = i == scoreboard_selectedScore ? SColour(0x00FF00FF) : SColour(0xFFFFFFFF);
+			SColour sc = (signed int)i == scoreboard_selectedScore ? SColour(0x00FF00FF) : SColour(0xFFFFFFFF);
 			std::string score = scoreTable->scoreMap->getValues()->at(i);
 			int dots = 17 - score.length();
 			char* c_dots = new char[dots + 1];
@@ -296,7 +296,7 @@ void Application::draw() {
 			c_dots[dots] = '\0';
 			DrawIO::drawString(std::to_string(i + 1) + std::string(". ") + (i < 9 ? std::string(" ") : std::string()) + String::replaceChar(std::string(scoreTable->scoreMap->getKeys()->at(i)), ' ', '.') + std::string(c_dots) + score, 62.f, (float)dY, 32.f, 32.f, 5.f, sc);
 			dY += 33;
-			delete c_dots;
+			delete[] c_dots;
 		}
 
 		DrawIO::fillRect((float)screenWidth / 2 - 200.f / 2, (float)screenHeight - 50.f, 98.f, 40.f, 0.f);
@@ -370,6 +370,12 @@ void Application::drawUpgradeStats(int index, float x, float y) {
 		upgradeLevel = playerUpgrades->sprintCooldownSpeed;
 		upgradeIcon = getGameObjects()->playerUpgrades.sprintCooldownSpeed;
 		upgradePrice = playerUpgrades->sprintCdnPrice;
+		break;
+	default:
+		upgradeName = "Error";
+		upgradeLevel = 5;
+		upgradeIcon = getGameObjects()->playerUpgrades.fireRate;
+		upgradePrice = 42;
 		break;
 	}
 
@@ -823,6 +829,10 @@ int Application::updateGame() {
 								upgradeLevel = &playerUpgrades->sprintCooldownSpeed;
 								upgradePrice = playerUpgrades->sprintCdnPrice;
 								break;
+							default:
+								upgradeLevel = new int(5);
+								upgradePrice = 42;
+								break;
 							}
 							if(upgradeLevel != nullptr && *upgradeLevel < 5) {
 								upgradePrice *= *upgradeLevel;
@@ -906,7 +916,7 @@ int Application::updateGame() {
 void Application::applyDifficulty() {
 	if(((int)gameTicks % (int)(tickLimit) / 2) == 0) {
 		if(enemySpawnEase == 0) {
-			enemySpawnEase = 32.f;
+			enemySpawnEase = 32;
 		}
 	}
 	if(((int)gameTicks % (int)(tickLimit * 2)) == 0) {

@@ -21,6 +21,8 @@ Enemy::Enemy(SPRITE sprite, SPRITE explosionSprites[], int x, int y, float rotat
 	this->speed = speed;
 	this->scale = (float)scale;
 	this->dropCoins = false;
+	this->explTex = 0;
+	this->explTicks = 0;
 
 	SetSpriteScale(texture, width, height);
 	MoveSprite(texture, this->x, this->y);
@@ -44,17 +46,12 @@ void Enemy::update() {
 		getApplication()->removeDrawable(this);
 		return;
 	} else if(!isAlive) {
-		if(explTex < 0) {
-			explTex = 0;
-			explTicks = 0;
-		}
-
 		if(explTicks % (int)(getApplication()->getTickLimit() / 5) == 0) {
 			explTex++;
 		}
 		explTicks++;
 
-		if(explTex == numExplosions) {
+		if(explTex == numExplosions - 1) {
 			isDead = true;
 			explTex--;
 		}
@@ -154,6 +151,7 @@ void Enemy::onCollide(ICollidable* col) {
 }
 
 void Enemy::onTesterMessage(ICollidable* col) {
+	col;
 	if(isAlive) {
 		BASS_ChannelPlay(getApplication()->getGameObjects()->explosionSound, true);
 
