@@ -12,7 +12,7 @@ EnemySpawner::EnemySpawner(int x, int y, int safezone, int negspawnrange, int po
 	this->revX = revX;
 
 	this->spawnticks = 0;
-	this->spawninterval = (int)(0.3 * getApplication()->getTickLimit());
+	this->spawninterval = (int)(0.5 * getApplication()->getTickLimit());
 }
 
 SPRITE EnemySpawner::getTexture() {

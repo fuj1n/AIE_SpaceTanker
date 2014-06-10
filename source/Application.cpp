@@ -23,7 +23,9 @@ Application::Application(int screenWidth, int screenHeight, bool isFullscreen) {
 
 	earnedHighScore = false;
 
-	enemySpawnEase = 128;
+	eortt = 0;
+	enemySpawnEase = 64;
+	enemySpawnerIndex = 0;
 
 	Input::fillDefaults();
 }
@@ -903,6 +905,7 @@ int Application::updateGame() {
 				scoreboard_selectedScore = -1;
 				earnedHighScore = false;
 				scoreTable->defaults();
+				scoreTable->save();
 			}
 		}
 		break;
@@ -915,7 +918,7 @@ int Application::updateGame() {
 
 void Application::applyDifficulty() {
 	if(((int)gameTicks % (int)(tickLimit) / 2) == 0) {
-		if(enemySpawnEase == 0) {
+		if(enemySpawnEase <= 0) {
 			enemySpawnEase = 32;
 		}
 	}
@@ -925,12 +928,9 @@ void Application::applyDifficulty() {
 		healthUpFrequency += (int)(proceduralDifficulty / 2);
 
 		enemySpawnEase--;
-		if(enemySpawnEase <= 10 && enemySpawnEase != -1) {
-			enemySpawnEase = 0;
+		if(enemySpawnEase == 10) {
+			enemySpawnEase = 1;
 			eortt = (int)tickLimit;
-		}
-		if(enemySpawnEase <= -1) {
-			enemySpawnEase = 32;
 
 			switch(enemySpawnerIndex) {
 			case 1:
