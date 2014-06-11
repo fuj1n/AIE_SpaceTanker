@@ -46,9 +46,9 @@ namespace {
 			std::string arg = std::string(argv[i]);
 
 			if(i + 1 < argc) {
-				if(arg == "-dispWidth") {
+				if(arg == "-dispwidth") {
 					displayWidth = atoi(argv[i + 1]);
-				} else if(arg == "-dispHeight") {
+				} else if(arg == "-dispweight") {
 					displayHeight = atoi(argv[i + 1]);
 				}
 			}

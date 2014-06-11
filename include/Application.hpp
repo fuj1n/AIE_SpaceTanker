@@ -1,5 +1,3 @@
-#define DEBUG false
-
 #include "IDrawable.hpp"
 #include "AIE.h"
 #include "GameObjects.hpp"
@@ -26,14 +24,11 @@ static const char* VERSION = "v1.0.1";
 static const bool gameRendersThroughPause = true;
 static const float startCountdownMax = 5.f;
 static bool debugMode = false;
+static HINSTANCE applInstance;
 static HANDLE processHandle;
 static HWND windowHandle;
 
 namespace {
-	bool isDebug() {
-		return DEBUG;
-	}
-
 	enum States {
 		SPLASH,
 		MAIN_MENU,
@@ -142,6 +137,7 @@ public:
 	int run();
 
 	void addDrawable(IDrawable* drawable);
+	void addDrawable_(IDrawable* drawable);
 	void removeDrawable(IDrawable* drawable);
 	void clearDrawables();
 	void addPlanet(IDrawable* drawable);

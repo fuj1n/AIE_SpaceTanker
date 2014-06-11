@@ -1,5 +1,6 @@
 #include "Application.hpp"
 
+#include "resource1.h"
 #include "Enemy.hpp"
 #include "Planet.hpp"
 #include "Player.hpp"
@@ -54,7 +55,8 @@ int Application::run() {
 
 	MoveWindow(windowHandle, displayWidth / 2 - wndWidth / 2, displayHeight / 2 - wndHeight / 2, wndWidth, wndHeight, true);
 
-	HICON winICO = (HICON)LoadImage(NULL, ".images/tanker.png", IMAGE_ICON, 64, 64, LR_LOADFROMFILE);
+	//AIE Framework window icon GG, no clue why it uses the primary domain icons when I provide it with the HINSTANCE (it works properly for the wrapper, which does not use AIE Framework)
+	HICON winICO = LoadIcon(applInstance, MAKEINTRESOURCE(IDI_ICON1));
 	SendMessage(windowHandle, WM_SETICON, ICON_SMALL, (LPARAM)winICO);
 	SendMessage(windowHandle, WM_SETICON, ICON_BIG, (LPARAM)winICO);
 
@@ -440,6 +442,10 @@ void Application::addDrawable(IDrawable* drawable) {
 	drawables.push_back(drawable);
 }
 
+void Application::addDrawable_(IDrawable* drawable) {
+	drawables.insert(drawables.begin(), drawable);
+}
+
 void Application::removeDrawable(IDrawable* drawable) {
 	drawable->destroySprites();
 	for(unsigned int i = 0; i < drawables.size(); i++) {
@@ -764,8 +770,8 @@ int Application::updateGame() {
 				  if(startCountdown == 0) {
 					  startCountdown--;
 
-					  addDrawable(new EnemySpawner(0, 0, 500, 5, 250, false, getGameObjects()->enemySpawnerSprite));
-					  addDrawable(new EnemySpawner(960 - 64, 960 - 64, 500, -250, -5, false, getGameObjects()->enemySpawnerSprite));
+					  addDrawable_(new EnemySpawner(0, 0, 500, 5, 250, false, getGameObjects()->enemySpawnerSprite));
+					  addDrawable_(new EnemySpawner(960 - 64, 960 - 64, 500, -250, -5, false, getGameObjects()->enemySpawnerSprite));
 					  enemySpawnerIndex = 1;
 				  }
 
@@ -934,12 +940,18 @@ void Application::applyDifficulty() {
 
 			switch(enemySpawnerIndex) {
 			case 1:
-				addDrawable(new EnemySpawner(960 - 64, 0, 500, 5, 250, true, getGameObjects()->enemySpawnerSprite));
+				addDrawable_(new EnemySpawner(960 - 64, 0, 500, 5, 250, true, getGameObjects()->enemySpawnerSprite));
 				break;
 			case 2:
-				addDrawable(new EnemySpawner(0, 960 - 64, 500, -250, -5, true, getGameObjects()->enemySpawnerSprite));
+				addDrawable_(new EnemySpawner(0, 960 - 64, 500, -250, -5, true, getGameObjects()->enemySpawnerSprite));
 				break;
-			case 10:
+			case 3:
+				addDrawable_(new EnemySpawner(0, 0, 500, 5, 250, false, getGameObjects()->enemySpawnerSprite));
+				break;
+			case 4:
+				addDrawable_(new EnemySpawner(960 - 64, 960 - 64, 500, -250, -5, false, getGameObjects()->enemySpawnerSprite));
+				break;
+			case 5:
 				enemySpawnerIndex = 1;
 			}
 			enemySpawnerIndex++;
