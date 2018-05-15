@@ -88,7 +88,10 @@ int Application::run() {
 		long now = timeGetTime();
 		delta += (now - lastTime) / msPerTick;
 		lastTime = now;
+		
+		// If this value is false by default, the framerate is capped to the tickrate
 		boolean shouldRender = true;
+		
 		while(delta >= 1) {
 			tickrate += 1;
 			quitStatus = update();
